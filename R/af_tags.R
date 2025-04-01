@@ -24,7 +24,7 @@ subset_data <- function(data, condition_var, condition_value, operator){
 
 #' Tests for NA equality between var1 and var2
 #'
-#' This function is designed for testing af-tags that filter from one item to the following item (under condition x)
+#' @description This function is designed for testing af-tags that filter from one item to the following item (under condition x).
 #'
 #' @param data A neps field-data dataframe.
 #' @param var1 A string that represents the variable where we want to test the af-tag.
@@ -71,9 +71,10 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
   }
 }
 
-#' Tests for NA equality between test_var and target_var and if all vars in overfiltered_vars are NA
+#' Tests complex af-tag filters
 #'
-#' This function is designed for testing af-tags that filter from one item to another item by skipping the items in between (under condition x).
+#' @description This function is designed for testing af-tags that filter from one item to another item by skipping the items in between (under condition x).
+#' It tests for NA equality between test_var and target_var and additionally if all vars in overfiltered_vars are NA.
 #'
 #' @param data A neps field-data dataframe.
 #' @param test_var A string that represents the variable where we want to test the af-tag.

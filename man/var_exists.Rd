@@ -2,7 +2,7 @@
 % Please edit documentation in R/misc_functions.R
 \name{var_exists}
 \alias{var_exists}
-\title{Test if specified variables are existent in the data}
+\title{Test if variables are existent in the data}
 \usage{
 var_exists(data, vars)
 }
@@ -12,5 +12,5 @@ var_exists(data, vars)
 \item{vars}{A string vector with variable names. It will be checked if these exist in the dataframe.}
 }
 \description{
-Test if specified variables are existent in the data
+This function can be used to test if a bunch of Hilfsvariable are existent in dataframe where we usually dont have any filtering in the instruction sheets.
 }

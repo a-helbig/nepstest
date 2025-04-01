@@ -2,9 +2,7 @@
 % Please edit documentation in R/misc_functions.R
 \name{date_test}
 \alias{date_test}
-\title{Compare the values of two date items
-It compares two variables (month and year) of date item 1 with two variables of date item 2 (month and year).
-Valid comparison operators are: 'smaller', 'smaller_equal', 'larger', 'larger_equal' and 'equal'.}
+\title{Compare the values of two date items}
 \usage{
 date_test(data, varm1, varj1, comparison = "smaller", varm2, varj2)
 }
@@ -22,7 +20,7 @@ date_test(data, varm1, varj1, comparison = "smaller", varm2, varj2)
 \item{varj2}{A String that holds the name of a monthly date variable.}
 }
 \description{
-Compare the values of two date items
 It compares two variables (month and year) of date item 1 with two variables of date item 2 (month and year).
 Valid comparison operators are: 'smaller', 'smaller_equal', 'larger', 'larger_equal' and 'equal'.
+Usually used to test ra-tags, where we compare two or more date variables against each other. The function mostly has to be used more than once on order to test a range tag completly.
 }

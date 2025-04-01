@@ -1,7 +1,7 @@
 
 #' Tests if target variable equals target value
 #'
-#' This function is designed to test ac-tags. It takes a dataset in data argument and tests if the variable in test_var argument equals the value or the variables value in argument target_var.
+#' @description This function is designed to test ac-tags. It takes a dataset in data argument and tests if the variable in test_var argument equals the value or the variables value in argument target_var.
 #'
 #' @param data A neps field-data dataframe.
 #' @param target_var A string that represents a variable within the dataframe.

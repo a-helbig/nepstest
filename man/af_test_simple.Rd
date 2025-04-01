@@ -2,8 +2,7 @@
 % Please edit documentation in R/af_tags.R
 \name{af_test_simple}
 \alias{af_test_simple}
-\title{Tests for NA equality between var1 and var2
-This function is designed for testing af-tags that filter from one item to the following item (under condition x)}
+\title{Tests for NA equality between var1 and var2}
 \usage{
 af_test_simple(
   data,
@@ -28,6 +27,5 @@ af_test_simple(
 \item{condition_value}{A string that contains a digit to be used as the conditional value.}
 }
 \description{
-Tests for NA equality between var1 and var2
-This function is designed for testing af-tags that filter from one item to the following item (under condition x)
+This function is designed for testing af-tags that filter from one item to the following item (under condition x).
 }

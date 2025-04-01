@@ -2,7 +2,7 @@
 % Please edit documentation in R/na_checks.R
 \name{only_na_in_vars}
 \alias{only_na_in_vars}
-\title{Checks if there are only NA values in specified var_names}
+\title{Tests if there are only NA values in specified var_names}
 \usage{
 only_na_in_vars(
   data,
@@ -24,5 +24,5 @@ only_na_in_vars(
 \item{condition_value}{A string that contains a digit to be used as the conditional value.}
 }
 \description{
-Checks if there are only NA values in specified var_names
+Tests if there are only NA values in specified var_names
 }

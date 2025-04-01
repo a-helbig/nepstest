@@ -2,8 +2,7 @@
 % Please edit documentation in R/af_tags.R
 \name{af_test_complex}
 \alias{af_test_complex}
-\title{Tests for NA equality between test_var and target_var and if all vars in overfiltered_vars are NA
-This function is designed for testing af-tags that filter from one item to another item by skipping the items in between (under condition x).}
+\title{Tests complex af-tag filters}
 \usage{
 af_test_complex(
   data,
@@ -31,6 +30,6 @@ af_test_complex(
 \item{condition_value}{A string that contains a digit to be used as the conditional value.}
 }
 \description{
-Tests for NA equality between test_var and target_var and if all vars in overfiltered_vars are NA
 This function is designed for testing af-tags that filter from one item to another item by skipping the items in between (under condition x).
+It tests for NA equality between test_var and target_var and additionally if all vars in overfiltered_vars are NA.
 }

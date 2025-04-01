@@ -1,4 +1,4 @@
-#' Checks if there are only NA values in specified var_names
+#' Tests if there are only NA values in specified var_names
 #'
 #' @param data A neps field-data dataframe.
 #' @param var_names A character vector with variables that will be checked to ensure they contain only NA values (under condition x).
@@ -29,7 +29,9 @@ only_na_in_vars <- function(data, var_names, condition_var=NULL, operator = "equ
   }
 }
 
-#' Checks if there are no NA values in specified var_names
+#' Tests if there are no NA values in var_names
+#'
+#' @description Most commonly used for testing a bunch of preload variables not being NA in case of "Aufsatzepisoden".
 #'
 #' @param data A neps field-data dataframe.
 #' @param var_names A character vector with variables that will be checked to ensure there are no NA values.

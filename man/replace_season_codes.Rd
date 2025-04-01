@@ -2,9 +2,7 @@
 % Please edit documentation in R/misc_functions.R
 \name{replace_season_codes}
 \alias{replace_season_codes}
-\title{Replace season codes in date variables with corresponding months
-This function will transform neps season codes to month values by subtracting 20 from each season code.
-E.g. code 24 - "Spring" will be 4 - "April".}
+\title{Replace season codes in date variables with corresponding months}
 \usage{
 replace_season_codes(
   data,
@@ -20,7 +18,6 @@ replace_season_codes(
 \item{values_to_replace}{Values that will be replaced with months. Only need to be edited in case of new season codes.}
 }
 \description{
-Replace season codes in date variables with corresponding months
 This function will transform neps season codes to month values by subtracting 20 from each season code.
 E.g. code 24 - "Spring" will be 4 - "April".
 }

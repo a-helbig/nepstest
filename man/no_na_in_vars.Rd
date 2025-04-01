@@ -2,7 +2,7 @@
 % Please edit documentation in R/na_checks.R
 \name{no_na_in_vars}
 \alias{no_na_in_vars}
-\title{Checks if there are no NA values in specified var_names}
+\title{Tests if there are no NA values in var_names}
 \usage{
 no_na_in_vars(
   data,
@@ -24,5 +24,5 @@ no_na_in_vars(
 \item{condition_value}{A string that contains a digit to be used as the conditional value.}
 }
 \description{
-Checks if there are no NA values in specified var_names
+Most commonly used for testing a bunch of preload variables not being NA in case of "Aufsatzepisoden".
 }

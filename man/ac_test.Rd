@@ -27,5 +27,5 @@ ac_test(
 \item{condition_value}{A string that contains a digit to be used as the conditional value.}
 }
 \description{
-Tests if target variable equals target value
+This function is designed to test ac-tags. It takes a dataset in data argument and tests if the variable in test_var argument equals the value or the variables value in argument target_var.
 }

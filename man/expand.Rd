@@ -12,5 +12,5 @@ expand(data, duration)
 \item{duration}{A String with a variable name that will be used for expanding. Usually a numerical duration variable.}
 }
 \description{
-Expand episode data to monthly structure
+This function is typically used when we transform episode data into monthly data. It requires a duration variable and then replicates rows according to the duration variable.
 }

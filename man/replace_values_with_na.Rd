@@ -2,8 +2,7 @@
 % Please edit documentation in R/misc_functions.R
 \name{replace_values_with_na}
 \alias{replace_values_with_na}
-\title{Set specific values to NA
-If only the data argument is supplied, the function will set specific values in all variables to NA.}
+\title{Set specific values to NA}
 \usage{
 replace_values_with_na(
   data,
@@ -19,6 +18,6 @@ replace_values_with_na(
 \item{values_to_replace}{A numerical vector with values that will be replaced with NA. By default most of the standard NEPS missings will be converted to NA.}
 }
 \description{
-Set specific values to NA
+This is used to quickly set NA values for specific missing codes in the NEPS data.
 If only the data argument is supplied, the function will set specific values in all variables to NA.
 }
