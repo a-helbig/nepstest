@@ -4,11 +4,7 @@
 \alias{replace_season_codes}
 \title{Replace season codes in date variables with corresponding months}
 \usage{
-replace_season_codes(
-  data,
-  vars = NULL,
-  values_to_replace = c(21, 24, 27, 30, 32)
-)
+replace_season_codes(data, vars, values_to_replace = c(21, 24, 27, 30, 32))
 }
 \arguments{
 \item{data}{A neps field-data dataframe.}

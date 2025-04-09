@@ -87,6 +87,143 @@ date_test <- function(data, varm1, varj1, comparison = "smaller", varm2, varj2) 
 }
 
 
+
+#' Test event or episode date variables
+#' @description date range testing: supply 7 arguments when testing events, supply 9 arguments when testing episodes. After data argument, start with the two check dates, e.g. intmPRE, intjPRE, intm, intj. Then add more arguments, either an event date to test, e.g. fphm, fphj or an episode like ezstm, ezstj, ezendm, ezendj.
+#'
+#' @param data A neps field-data dataframe.
+#' @param pm1 A String that holds the name of a monthly date variable which value will be used to test the date ranges of the target variable.
+#' @param pj1 A String that holds the name of a yearly date variable which value will be used to test the date ranges of the target variable.
+#' @param pm2 A String that holds the name of a monthly date variable which value will be used to test the date ranges of the target variable.
+#' @param pj2 A String that holds the name of a yearly date variable which value will be used to test the date ranges of the target variable.
+#' @param varm1 A String that holds the name of a monthly date variable which is usually the start date of the episode
+#' @param varj1 A String that holds the name of a yearly date variable which is usually the start date of the episode
+#' @param varm2 A String that holds the name of a monthly date variable which is usually the end date of the episode. This second date variable is only used when testing episode dates and not for event dates
+#' @param varj2 A String that holds the name of a yearly date variable which is usually the end date of the episode This second date variable is only used when testing episode dates and not for event dates
+#'
+#' @returns either an error with an informative message about the type of error and the caseids involved or a success output print which wont stop the script
+#'
+#' @examples test_data <- data.frame(caseid = c(12393535), intmPRE = c(-97), intjPRE = c(2020),
+#' ezstm = c(-97), ezstj = c(2024), ezendm = c(6), ezendj = c(-97), intm = c(12), intj = c(2024))
+#' date_test_complex(test_data,"intmPRE", "intjPRE", "intm", "intj", "ezstm", "ezstj", "ezendm", "ezendj")
+#'
+#' @export
+date_test_complex <- function(data, pm1, pj1, pm2, pj2, varm1, varj1, varm2 = NULL, varj2 = NULL) {
+
+  # Check if all specified variables exist in the dataframe
+  var_names <- c(varm1, pm1, pj1, varj1, pm2, pj2, "caseid")  # Include caseid in the checks
+  if (!is.null(varm2) && !is.null(varj2)) {
+    var_names <- c(var_names, varm2, varj2)  # Add var2 variables only if they are not NULL
+  }
+
+  for (var in var_names) {
+    if (!var %in% names(data)) {
+      stop(paste("ERROR: Variable", var, "not found in the dataframe"))
+    }
+  }
+
+  data <- replace_season_codes(data, c(pm1, pj1, pm2, pj2, varm1, varj1, varm2, varj2))
+
+  # Filter for non-NA rows in the specified date variables
+  data <- data[!is.na(data[[varm1]]) &
+                 !is.na(data[[varj1]]) &
+                 !is.na(data[[pm1]]) &
+                 !is.na(data[[pj1]]) &
+                 !is.na(data[[pm2]]) &
+                 !is.na(data[[pj2]]), ]
+
+  if (!is.null(varm2) && !is.null(varj2)) {
+    # Include var2 checks only when not NULL and filter out NAs
+    data <- data[!is.na(data[[varm2]]) & !is.na(data[[varj2]]), ]
+  }
+
+  # Set missing codes to NA again
+  data <- replace_values_with_na(data, vars=c(pm1, pj1, pm2, pj2, varm1, varj1, varm2, varj2))
+
+  # Generate min-max variables when month is missing and year is not missing
+  data$p1 <- (data[[pj1]] * 12) + data[[pm1]]
+  data$p1min <- ifelse(is.na(data[[pm1]]) & !is.na(data[[pj1]]), 1 + data[[pj1]] * 12, data$p1)
+  data$p1max <- ifelse(is.na(data[[pm1]]) & !is.na(data[[pj1]]), 12 + data[[pj1]] * 12, data$p1)
+
+  data$p2 <- (data[[pj2]] * 12) + data[[pm2]]
+  data$p2min <- ifelse(is.na(data[[pm2]]) & !is.na(data[[pj2]]), 1 + data[[pj2]] * 12, data$p2)
+  data$p2max <- ifelse(is.na(data[[pm2]]) & !is.na(data[[pj2]]), 12 + data[[pj2]] * 12, data$p2)
+
+  data$var1 <- (data[[varj1]] * 12) + data[[varm1]]
+  data$var1min <- ifelse(is.na(data[[varm1]]) & !is.na(data[[varj1]]), 1 + data[[varj1]] * 12, data$var1)
+  data$var1max <- ifelse(is.na(data[[varm1]]) & !is.na(data[[varj1]]), 12 + data[[varj1]] * 12, data$var1)
+
+  # Add var2 only if both varj2 and varm2 are not NULL
+  if (!is.null(varm2) && !is.null(varj2)) {
+    # Calculate var2 and its min/max versions using base R
+    data$var2 <- (data[[varj2]] * 12) + data[[varm2]]
+
+    # Calculate var2min
+    data$var2min <- ifelse(is.na(data[[varm2]]) & !is.na(data[[varj2]]),
+                           1 + data[[varj2]] * 12, data$var2)
+
+    # Calculate var2max
+    data$var2max <- ifelse(is.na(data[[varm2]]) & !is.na(data[[varj2]]),
+                           12 + data[[varj2]] * 12, data$var2)
+  }
+
+  # Initialize a list to store failing caseids
+  failing_cases_list <- list()
+
+  # 1. Check: Internal consistency (p1 vs p2),
+  # Applies to all checks: Exclude NA, so missings in year variables will be disregarded (following the test conventions)
+  # Applies to all checks: Collect failing case IDs in a numeric vector and add it to the list, naming the vector based on the specific condition that caused the failure.
+  if (any(data$p1min > data$p2max, na.rm = TRUE)) {
+    failing_cases <- data$caseid[data$p1min > data$p2max & !is.na(data$p1min) & !is.na(data$p2max)]
+    failing_cases_list <- c(failing_cases_list, list("p1 > p2" = unique(failing_cases)))
+  }
+
+  # 2. Check: Internal consistency (var1 vs var2) - only if var2 is available
+  if (!is.null(varm2) && !is.null(varj2) && any(data$var1min > data$var2max, na.rm = TRUE)) {
+    failing_cases <- data$caseid[data$var1min > data$var2max & !is.na(data$var1min) & !is.na(data$var2max)]
+    failing_cases_list <- c(failing_cases_list, list("var1 > var2" = unique(failing_cases)))
+  }
+
+  # 3. Check: External consistency p1 vs var1
+  if (any(data$p1min > data$var1max, na.rm = TRUE)) {
+    failing_cases <- data$caseid[data$p1min > data$var1max & !is.na(data$p1min) & !is.na(data$var1max)]
+    failing_cases_list <- c(failing_cases_list, list("p1 > var1" = unique(failing_cases)))
+  }
+
+  # 4. Additional check for p1 vs var2 - only if var2 is available
+  if (!is.null(varm2) && !is.null(varj2) && any(data$p1min > data$var2max, na.rm = TRUE)) {
+    failing_cases <- data$caseid[data$p1min > data$var2max & !is.na(data$p1min) & !is.na(data$var2max)]
+    failing_cases_list <- c(failing_cases_list, list("p1 > var2" = unique(failing_cases)))
+  }
+
+  # 5. Check: External consistency p2 vs var2 - only if var2 is available
+  if (!is.null(varm2) && !is.null(varj2) && any(data$p2max < data$var2min, na.rm = TRUE)) {
+    failing_cases <- data$caseid[data$p2max < data$var2min & !is.na(data$p2max) & !is.na(data$var2min)]
+    failing_cases_list <- c(failing_cases_list, list("p2 < var2" = unique(failing_cases)))
+  }
+
+  # 6. Check: External consistency p2 vs var1
+  if (any(data$p2max < data$var1min, na.rm = TRUE)) {
+    failing_cases <- data$caseid[data$p2max < data$var1min & !is.na(data$p2max) & !is.na(data$var1min)]
+    failing_cases_list <- c(failing_cases_list, list("p2 < var1" = unique(failing_cases)))
+  }
+
+  # After all checks, report any failing caseids
+  if (length(failing_cases_list) > 0) {
+    error_message <- "The following cases failed the checks:\n"
+    for (condition in names(failing_cases_list)) {
+      error_message <- paste0(error_message, condition, ": ",
+                              paste(unique(failing_cases_list[[condition]]), collapse = ", "), "\n")
+    }
+    stop(error_message)
+  } else {
+    print("All checks passed successfully.")
+  }
+}
+
+
+
+
 #' Set specific values to NA
 #'
 #' @description This is used to quickly set NA values for specific missing codes in the NEPS data.
@@ -141,20 +278,38 @@ replace_values_with_na <- function(data, vars = NULL, values_to_replace = c(seq(
 #' @param values_to_replace Values that will be replaced with months. Only need to be edited in case of new season codes.
 #'
 #' @export replace_season_codes
-replace_season_codes <- function(data, vars = NULL, values_to_replace=c(21, 24, 27, 30, 32)) {
-  if (is.null(vars)) {
-    for(var in names(data)) {
-      for(value in values_to_replace) {
+replace_season_codes <- function(data, vars, values_to_replace = c(21, 24, 27, 30, 32)) {
+
+  # Throw an error if data is not a dataframe
+  if (!is.data.frame(data)) {
+    stop("Error: The 'data' argument must be a dataframe. Please provide a valid dataframe.")
+  }
+
+  # Throw an error if vars is missing
+  if (missing(vars) || is.null(vars)) {
+    stop("Error: The 'vars' argument is missing or NULL. Please provide a vector containing the names of the monthly date variables where season codes should be replaced with corresponding months.")
+  }
+
+  # Throw an error if values_to_replace is not a numeric vector
+  if (!is.numeric(values_to_replace) || length(values_to_replace) == 0) {
+    stop("Error: The 'values_to_replace' argument must be a non-empty numeric vector. Please provide valid numeric values for replacement.")
+  }
+
+  # Process the data based on the vars argument
+  if (length(vars) == 0) {
+    for (var in names(data)) {
+      for (value in values_to_replace) {
         data[[var]][data[[var]] == value] <- value - 20
       }
     }
   } else {
-    for(var in vars) {
-      for(value in values_to_replace) {
+    for (var in vars) {
+      for (value in values_to_replace) {
         data[[var]][data[[var]] == value] <- value - 20
       }
     }
   }
+
   return(data)
 }
 
