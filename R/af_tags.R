@@ -35,41 +35,62 @@ subset_data <- function(data, condition_var, condition_value, operator){
 #'
 #' @export af_test_simple
 af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "equal", condition_value = NULL) {
-
-  # Capture the name of the data argument
   data_name <- deparse(substitute(data))
 
-  # Check if var1 and var2 exist in the dataframe
+  # Check variable presence
   if (!var1 %in% names(data)) {
     stop(paste("ERROR: Variable", var1, "not found in the dataframe", data_name))
   }
-
   if (!var2 %in% names(data)) {
     stop(paste("ERROR: Variable", var2, "not found in the dataframe", data_name))
   }
 
-  # Subset the data based on conditions if supplied
+  # Subset if conditions are specified
   if (!is.null(condition_var) && !is.null(condition_value)) {
     if (!condition_var %in% names(data)) {
-      stop(paste("ERROR: Condition variable", condition_var, "not found in the dataframe"))
+      stop(paste("ERROR: Condition variable", condition_var, "not found in the dataframe."))
     }
     data <- subset_data(data, condition_var, condition_value, operator)
   }
 
-  # Extract variable values
   var1_values <- data[[var1]]
   var2_values <- data[[var2]]
 
-  # Function to check NA equivalence
+  # main function to test na equivalence between specified var1 and var2
   check_na_equivalence <- function(x, y) {
-    !is.na(x) == !is.na(y)
+    (!is.na(x)) == (!is.na(y))
   }
 
-  # Check for unequal NA values
-  if (!all(check_na_equivalence(var1_values, var2_values))) {
-    stop(paste("ERROR, unequal NA values between", var1, "and", var2, "in dataset", data_name))
+  # which ids dont have NA-equivalence
+  fail_idx <- !check_na_equivalence(var1_values, var2_values)
+
+  # if there are any errors, print error message with a list of caseids and print informative dataframe with these caseids (reorder relevant variables) then stop func and script execution
+  if (any(fail_idx)) {
+    fail_caseids <- data$caseid[fail_idx]
+    id_info <- paste("Problematic caseid(s):", paste(unique(fail_caseids), collapse = ", "))
+
+    print_data <- data[fail_idx, ]
+    # reorder col names in dataframe so that relevant variables are shown in the first cols. the setdiff here is used to print all other vars in df behind the first 3
+    cols_order <- c("caseid", var1, var2, setdiff(names(print_data), c("caseid", var1, var2)))
+    print_data <- print_data[, cols_order, drop = FALSE]
+
+    message("ERROR: Unequal NA presence between '", var1, "' and '", var2, "'.")
+    message(id_info)
+    print(print_data)
+
+    stop("Please inspect the above rows for NA mismatches.")
+  }
+
+  # if there are no errors, print sucess messagess
+  else {
+    message("SUCCESS: Variables '", var1, "' and '", var2, "' have identical NA patterns (under specified conditions).")
   }
 }
+
+
+
+
+
 
 #' Tests complex af-tag filters
 #'
@@ -86,10 +107,9 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
 #'
 #' @export af_test_complex
 af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condition_var = NULL, operator = "equal", condition_value = NULL) {
-  # Capture the name of the data argument
   data_name <- deparse(substitute(data))
 
-  # Subset the data based on condition_var and condition_value if supplied
+  # Subset data if condition specified
   if (!is.null(condition_var) && !is.null(condition_value)) {
     if (!condition_var %in% names(data)) {
       stop(paste("ERROR: Condition variable", condition_var, "not found in the dataframe"))
@@ -97,37 +117,84 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
     data <- subset_data(data, condition_var, condition_value, operator)
   }
 
-  # Subset the data where test_var is not NA
+  # Check presence of test_var and exclude NA rows there
   if (!test_var %in% names(data)) {
     stop(paste("ERROR: test_var", test_var, "not found in the dataframe"))
   }
   data <- data[!is.na(data[[test_var]]), ]
 
-  # Pull out values for target_var
-  target_var_values <- data[[target_var]]
+  # Check presence of target_var
+  if (!target_var %in% names(data)) {
+    stop(paste("ERROR: target_var", target_var, "not found in the dataframe"))
+  }
 
-  # Ensure argument overfiltered_vars is a vector and not empty
+  # Check overfiltered_vars is a non-empty vector
   if (!is.vector(overfiltered_vars) || length(overfiltered_vars) == 0) {
     stop("ERROR: overfiltered_vars must be a non-empty vector of variable names.")
   }
 
-  # Check if target_var has any NA values
-  if (any(is.na(target_var_values))) {
-    stop(paste("ERROR: Target variable", target_var, "contains NA values in dataset", data_name))
+  # Check all overfiltered_vars exist in data
+  missing_vars <- overfiltered_vars[!overfiltered_vars %in% names(data)]
+  if (length(missing_vars) > 0) {
+    stop(paste("ERROR: The following overfiltered_vars not found in dataset:", paste(missing_vars, collapse = ", ")))
   }
 
-  # Iterate over the variable names in overfiltered_vars
+  ### Run Test 1: Check all overfiltered_vars are NA
+  test1_fail_caseids <- character(0)
+  test1_success <- TRUE
   for (var in overfiltered_vars) {
-    # Check whether the variable exists in the data frame
-    if (!var %in% names(data)) {
-      stop(paste("ERROR: Variable", var, "not found in dataset", data_name))
-    }
-
-    overfiltered_vars_values <- data[[var]]  # Correctly pull out the column for each var in overfiltered_vars
-
-    # Check if the corresponding overfiltered_vars_values is not NA
-    if (any(!is.na(overfiltered_vars_values))) {
-      stop(paste("ERROR: Overfiltered variable", var, "must be NA to fulfill af-tag condition"))
+    test1_fails <- which(!is.na(data[[var]]))
+    if (length(test1_fails) > 0) {
+      test1_success <- FALSE
+      test1_fail_caseids <- c(test1_fail_caseids, unique(data$caseid[test1_fails]))
     }
   }
+  # reduce to unique caseids
+  test1_fail_caseids <- unique(test1_fail_caseids)
+
+  # print a message with all caseids where overfiltered_vars were not NA
+  if(!test1_success) {
+    message(paste0("Test 1: ERROR - not all overfiltered vars are NA under condition specified. Please inspect the caseid(s):", paste(test1_fail_caseids, collapse = ", ")))
+
+    print_data1 <- data[test1_fails, ]
+    # reorder col names in dataframe so that relevant variables are shown in the first cols. the setdiff here is used to print all other vars in df behind the first 3
+    cols_order <- c("caseid", test_var, target_var, overfiltered_vars, setdiff(names(print_data1), c("caseid", test_var, target_var, overfiltered_vars)))
+    # now we use this vec with the desired order of variables to actually sort the df
+    print_data1 <- print_data1[, cols_order]
+    print(print_data1)
+  }
+
+  else message("Test 1: SUCCESS - all overfiltered var are NA.")
+
+  ### Run Test 2: Check target vars are
+  # initialize vars
+  test2_fail_caseids <- character(0)
+  test2_success <- TRUE
+
+  # define function for testing na equivalence between 2 vars in df
+  check_na_equivalence <- function(x, y) (!is.na(x)) == (!is.na(y))
+
+  # create logical vector on NA-equivalence
+  test2_fails <- !check_na_equivalence(data[[test_var]], data[[target_var]])
+  # use this to subset caseid vector
+  test2_fails_caseids <- unique(data$caseid[test2_fails])
+  # set flag for success = TRUE when there are no caseids
+  test2_success <- length(test2_fails_caseids) == 0
+
+  if(!test2_success)
+  {
+    message(paste0("Test 2: ERROR - Target-Variable '", target_var, "' has NA mismatch with Test-Variable '", test_var, "'. Please inspect the caseid(s): ", paste(test2_fails_caseids, collapse = ", "),"."))
+
+    print_data2 <- data[test2_fails, ]
+    # reorder col names in dataframe so that relevant variables are shown in the first cols. the setdiff here is used to print all other vars in df behind the first 3
+    cols_order <- c("caseid", test_var, target_var, overfiltered_vars, setdiff(names(print_data2), c("caseid", test_var, target_var, overfiltered_vars)))
+    # now we use this vec with the desired order of variables to actually sort the df
+    print_data2 <- print_data2[, cols_order]
+    print(print_data2)
+  }
+  else message("Test 2: SUCCESS - No NA mismatch between test_var and target_var.")
+
+  # stop function of any of both tests failed. That means of any overfiltered vars have non NA values or if target var has NA mismatch with test variable (under specified condition)
+  if(length(test1_fail_caseids)>0 | length(test2_fail_caseids)>0) stop("Either Test 1 or Test 2 failed or both. Please check problematic caseids manually.")
+
 }

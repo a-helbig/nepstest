@@ -24,3 +24,4 @@ test_that("af_test_complex: test main feature of function and stops", {
   expect_error(af_test_complex(test_data, "ezendm", "ezmod",)) # test if forth stop does work (target_var has any NA values)
   expect_error(af_test_complex(test_data, "ezendm", "ezmod",c("kieubeeg","esmod"))) # test if fifth stop does work (overfiltered vars exist)
 })
+

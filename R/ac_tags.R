@@ -12,54 +12,82 @@
 #'
 #' @export ac_test
 ac_test <- function(data, target_var, target_value, condition_var = NULL, operator = "equal", condition_value = NULL) {
-  # Check if variable and condition_var exist in the dataframe
+  caseid_var <- "caseid"  # hardcoded default caseid column
+
+  # Check required columns: target_var must be found as a variable name in data
   if (!target_var %in% names(data)) {
     stop(paste("ERROR: Variable", target_var, "not found in the dataframe"))
   }
+  # Check required columns: caseid_var must be found as a variable name in data
+  if (!caseid_var %in% names(data)) {
+    stop(paste("ERROR: Case ID variable", caseid_var, "not found in the dataframe"))
+  }
 
-  # Subset the data based on conditions if supplied
+  # Subset data according to condition (same as your original)
   if (!is.null(condition_var) && !is.null(condition_value)) {
+    # first, check if condition var is existent in df
     if (!condition_var %in% names(data)) {
       stop(paste("ERROR: Condition variable", condition_var, "not found in the dataframe"))
     }
+    # actual subsetting
     data <- subset_data(data, condition_var, condition_value, operator)
   }
 
-  # Initialize the only_x variable
-  only_x <- NULL
+  # Function to reorder columns: caseid first, target_var second, then others. We do this because we print dataframe snippets in order to get a quick glance at different relevant variables in case of errors.
+  reorder_cols <- function(df) {
+    others <- setdiff(names(df), c(caseid_var, target_var))
+    df[, c(caseid_var, target_var, others), drop = FALSE]
+  }
 
-  # Check if target_value is numeric
+   # 1. USE CASE: Numeric target_var specification
   if (is.numeric(target_value)) {
-    if (target_var %in% names(data)) {
-      # Check if all values in target_var are one of the values in target_value or NA
-      only_x <- all(data[[target_var]] %in% target_value | is.na(data[[target_var]]))
-      if (only_x) {
-        print(paste("Success!! The '", target_var, "' variable contains only values in '", paste(target_value, collapse = ", "), "' under specified condition")) # Feedback in case target_value is numeric
-      }
-      else {
-        stop(paste("Error!! The '", target_var, "' variable does NOT contain only values in '", paste(target_value, collapse = ", "), "'")) # Error Message
-      }
+    # Rows where values are NOT in target_value or NA:
+    fail_rows <- data[!(data[[target_var]] %in% target_value | is.na(data[[target_var]])), ]
+
+    # TEST SUCCESS: If there are no Errors, print success message
+    if(nrow(fail_rows) == 0) {
+      message(paste0("SUCCESS: The '", target_var, "' variable contains only values in '", paste(target_value, collapse = ", "), "'"))
     }
 
-    # Check if target_value is a character that matches a variable in the data
-  } else if (is.character(target_value)) {
-    # Check if target_value is a valid variable in the dataframe
+      # TEST FAIL: if there are Errors, make a df with failing caseids and then print Error message with these caseids and print df with these caseids
+     else if(nrow(fail_rows) > 0) {
+
+      fail_caseids <- unique(fail_rows[[caseid_var]])
+      message("ERROR: Target variable '", target_var, "' contains unexpected values.")
+      print(reorder_cols(fail_rows))
+
+      # after the output, we stop the function and the script execution
+      stop(paste0("Problematic caseid(s): ", paste(fail_caseids, collapse = ", ")))
+     }
+  }
+
+  # 2. USE CASE: Character target_var specification (user supplies variable instead of value)
+  else if (is.character(target_value)) {
+    # first, check if the supplied character is avaiable as a var in data, if not, break function/script
     if (!(target_value %in% names(data))) {
-      stop(paste("ERROR: Target value", target_value, "not found as a variable in the dataframe"))
+      stop(paste("ERROR: Target value' ", target_value, "' not found as a variable in the dataframe"))
+    }
+    # here we collect cases that have not either NA values on both, target_var and target_value or are not equal
+    fail_idx <- !((is.na(data[[target_var]]) & is.na(data[[target_value]])) |
+                     (data[[target_var]] == data[[target_value]]) )
+
+    # TEST SUCCESS: If there are no Errors, print success message
+    if (!any(fail_idx)) {
+      message(paste0("SUCCESS: The '", target_var, "' variable equals variable '", target_value, "'"))
     }
 
-    # Check if both target_var and target_value are NA
-    only_x <- all((is.na(data[[target_var]]) & is.na(data[[target_value]])) |
-                    (data[[target_var]] == data[[target_value]]))
-
-    # Print messages based on the result and stop script if values are not confirmed
-    if (is.na(only_x)) {
-      stop("Error, there are NA values that do not align across the two variables")
-    } else if (only_x) {
-      print(paste("Success!! The '", target_var, "' variable equals variable '", target_value, "' under specified condition"))
-    } else {
-      stop(paste("Error!! The '", target_var, "' variable does NOT contain only '", target_value, "' values"))
+    # TEST FAIL: if there are Errors, make a df with failing caseids and then print Error message with these caseids and print df with these caseids
+    else {
+      fail_rows <- data[fail_idx, ]
+      fail_caseids <- unique(fail_rows[[caseid_var]])
+      message("ERROR: Target Variable '", target_var, "' does NOT match variable '", target_value, "'. Rows with failures: ")
+      print(reorder_cols(fail_rows))
+      stop(paste0("Problematic caseid(s): ", paste(fail_caseids, collapse = ", ")))
     }
   }
-}
 
+  #  3. "USE" CASE: Wrong specification of target_value argument
+  else {
+    stop("target_value must be either numeric or a character variable name in data.")
+  }
+}
