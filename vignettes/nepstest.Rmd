@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 library(nepstest)
 ```
 
-This package helps with testing neps sc6 field data. It contains a few functions specifically designed to test different tags in the programming instruction sheets (PVs: Programmiervorlagen).
+This package helps with testing NEPS SC6 field data. It contains a few functions specifically designed to test different tags in the programming instruction sheets (PVs: Programmiervorlagen).
 
-The Work task "NEPS Felddatenprüfung" mostly involves testing filter ways through the questionaire (af-tags), auto codes of variables (ac-tags) and value range restrictions (ra-tags). Testing variable names (va-tag), variable labels (vb-tag) and value codes and labels (we-tag) is also part of this work process but was automated with the shiny app "NEPS_Labelprüfung_app".
+The work task "NEPS Felddatenprüfung" mostly involves testing filter ways through the questionaire (af-tags), auto codes of variables (ac-tags) and value range restrictions (ra-tags). Testing variable names (va-tag), variable labels (vb-tag) and value codes and labels (we-tag) is also part of this work process but was automated with the shiny app "NEPS_Labelprüfung_app".
 

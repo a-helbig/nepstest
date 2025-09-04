@@ -1,8 +1,8 @@
 # nepstest
 
-This package contains functions for testing NEPS Feldddatenlieferungen. The functions specifically tests if ac-tags, af-tags and ra-tags were programmed as intended by comparing values from different variables in the datasets.
+This package contains functions for testing NEPS Feldddatenlieferungen. The functions specifically tests if ac-tags, af-tags and ra-tags were programmed as intended by comparing values from different variables in the datasets. The most important functions are thus: ac_test, af_test_simple, af_test_complex and date_test_complex. The others are more or less helper functions that facilitate specific things. Review the B180 written test scripts in order to understand how the functions are used in practice.
 
-Install the package with `devtools::install_git('https://gitlab.wzb.eu/ahelbig/nepstest')`. Note that you might need to install devtools package before.
+Install the package with `remotes::install_git('https://gitlab.wzb.eu/ahelbig/nepstest')`. Note that you might need to install remotes package before.
 
 
 - `ac_test()`
@@ -19,6 +19,10 @@ Tests for NA equality between var1 and var2
 
 - `date_test()`
 Compare the values of two date items
+
+
+- `date_test_complex()`
+Tests event or episode date variables
 
 
 - `expand()`

@@ -44,6 +44,6 @@ date range testing: supply 7 arguments when testing events, supply 9 arguments w
 \examples{
 test_data <- data.frame(caseid = c(12393535), intmPRE = c(-97), intjPRE = c(2020),
 ezstm = c(-97), ezstj = c(2024), ezendm = c(6), ezendj = c(-97), intm = c(12), intj = c(2024))
-date_test_complex(test_data,"intmPRE", "intjPRE", "intm", "intj", "ezstm", "ezstj", "ezendm", "ezendj")
+date_test_complex(test_data,"intmPRE","intjPRE","intm","intj","ezstm","ezstj","ezendm","ezendj")
 
 }

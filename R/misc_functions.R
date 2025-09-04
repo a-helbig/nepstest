@@ -105,7 +105,7 @@ date_test <- function(data, varm1, varj1, comparison = "smaller", varm2, varj2) 
 #'
 #' @examples test_data <- data.frame(caseid = c(12393535), intmPRE = c(-97), intjPRE = c(2020),
 #' ezstm = c(-97), ezstj = c(2024), ezendm = c(6), ezendj = c(-97), intm = c(12), intj = c(2024))
-#' date_test_complex(test_data,"intmPRE", "intjPRE", "intm", "intj", "ezstm", "ezstj", "ezendm", "ezendj")
+#' date_test_complex(test_data,"intmPRE","intjPRE","intm","intj","ezstm","ezstj","ezendm","ezendj")
 #'
 #' @export
 date_test_complex <- function(data, pm1, pj1, pm2, pj2, varm1, varj1, varm2 = NULL, varj2 = NULL) {
