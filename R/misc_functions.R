@@ -137,10 +137,10 @@ date_test_complex <- function(data, pm1, pj1, pm2, pj2, varm1, varj1, varm2 = NU
     data <- data[!is.na(data[[varm2]]) & !is.na(data[[varj2]]), ]
   }
 
-  # Set missing codes to NA again
+  # Set missing codes to NA
   data <- replace_values_with_na(data, vars=c(pm1, pj1, pm2, pj2, varm1, varj1, varm2, varj2))
 
-  # Generate min-max variables when month is missing and year is not missing
+  # Generate variables for the date test. First, we create date variables out of year and month variable. Second, we create a minimum variable for that date variable that gets january assigned as a minimum for the monthly level in case month is NA. Third, we create a maximum variable for the date variable that gets december assigned as a maximum for the monthly level in case month is NA. This procedure mirrors the process of how infas is supposed to deal with missings in month variables with regard to date checks in the ra-tags. If year variable has NA, all 3 generated variables will be NA and dropped in the checks below ("due to na.rm = T")
   data$p1 <- (data[[pj1]] * 12) + data[[pm1]]
   data$p1min <- ifelse(is.na(data[[pm1]]) & !is.na(data[[pj1]]), 1 + data[[pj1]] * 12, data$p1)
   data$p1max <- ifelse(is.na(data[[pm1]]) & !is.na(data[[pj1]]), 12 + data[[pj1]] * 12, data$p1)
