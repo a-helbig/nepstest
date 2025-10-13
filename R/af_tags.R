@@ -32,10 +32,19 @@ subset_data <- function(data, condition_var, condition_value, operator){
 #' @param condition_var A string representing a variable name to be used as a conditional variable.
 #' @param operator A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".
 #' @param condition_value A string that contains a digit to be used as the conditional value.
+#' @param empty_as_na Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE
 #'
 #' @export af_test_simple
-af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "equal", condition_value = NULL) {
+af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "equal", condition_value = NULL, empty_as_na = TRUE) {
   data_name <- deparse(substitute(data))
+
+  # Helper to replace "" with NA in character vectors if requested
+  replace_empty_with_na <- function(x, empty_as_na) {
+    if (empty_as_na && is.character(x)) {
+      x[x == ""] <- NA
+    }
+    x
+  }
 
   # Check variable presence
   if (!var1 %in% names(data)) {
@@ -53,16 +62,13 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
     data <- subset_data(data, condition_var, condition_value, operator)
   }
 
-  var1_values <- data[[var1]]
-  var2_values <- data[[var2]]
-
-  # main function to test na equivalence between specified var1 and var2
-  check_na_equivalence <- function(x, y) {
-    (!is.na(x)) == (!is.na(y))
-  }
+  # replace empty strings "''" with NA.
+  var1_values <- replace_empty_with_na(data[[var1]], empty_as_na)
+  var2_values <- replace_empty_with_na(data[[var2]], empty_as_na)
 
   # which ids dont have NA-equivalence
-  fail_idx <- !check_na_equivalence(var1_values, var2_values)
+  not_na_var1 <- !is.na(var1_values) # get rid of cases where var1 is NA
+  fail_idx <- not_na_var1 & is.na(var2_values)
 
   # if there are any errors, print error message with a list of caseids and print informative dataframe with these caseids (reorder relevant variables) then stop func and script execution
   if (any(fail_idx)) {
@@ -81,14 +87,11 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
     stop("Please inspect the above rows for NA mismatches.")
   }
 
-  # if there are no errors, print sucess messagess
+  # if there are no errors, print success messages
   else {
     message("SUCCESS: Variables '", var1, "' and '", var2, "' have identical NA patterns (under specified conditions).")
   }
 }
-
-
-
 
 
 
@@ -104,10 +107,20 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
 #' @param condition_var A string representing a variable name to be used as a conditional variable.
 #' @param operator A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".
 #' @param condition_value A string that contains a digit to be used as the conditional value.
+#' @param empty_as_na Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE
 #'
 #' @export af_test_complex
-af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condition_var = NULL, operator = "equal", condition_value = NULL) {
+af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condition_var = NULL,
+                            operator = "equal", condition_value = NULL, empty_as_na = TRUE) {
   data_name <- deparse(substitute(data))
+
+  # Helper that replaces empty strings with NA in character vectors if flag is TRUE
+  replace_empty_with_na <- function(x, empty_as_na) {
+    if (empty_as_na && is.character(x)) {
+      x[x == ""] <- NA
+    }
+    x
+  }
 
   # Subset data if condition specified
   if (!is.null(condition_var) && !is.null(condition_value)) {
@@ -117,23 +130,34 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
     data <- subset_data(data, condition_var, condition_value, operator)
   }
 
-  # Check presence of test_var and exclude NA rows there
+  # Check presence of test_var
   if (!test_var %in% names(data)) {
     stop(paste("ERROR: test_var", test_var, "not found in the dataframe"))
   }
+
+  # Replace empty strings with NA in test_var, target_var, and overfiltered_vars
+  data[[test_var]] <- replace_empty_with_na(data[[test_var]], empty_as_na)
+
+  # Subset rows where test_var is not NA (same as original behavior)
   data <- data[!is.na(data[[test_var]]), ]
 
-  # Check presence of target_var
   if (!target_var %in% names(data)) {
     stop(paste("ERROR: target_var", target_var, "not found in the dataframe"))
   }
 
-  # Check overfiltered_vars is a non-empty vector
+  # replace empty strings "''" with NA.
+  data[[target_var]] <- replace_empty_with_na(data[[target_var]], empty_as_na)
+
+  data[[test_var]] <- replace_empty_with_na(data[[test_var]], empty_as_na)
+
+  for (var in overfiltered_vars) {
+    data[[var]] <- replace_empty_with_na(data[[var]], empty_as_na)
+  }
+
   if (!is.vector(overfiltered_vars) || length(overfiltered_vars) == 0) {
     stop("ERROR: overfiltered_vars must be a non-empty vector of variable names.")
   }
 
-  # Check all overfiltered_vars exist in data
   missing_vars <- overfiltered_vars[!overfiltered_vars %in% names(data)]
   if (length(missing_vars) > 0) {
     stop(paste("ERROR: The following overfiltered_vars not found in dataset:", paste(missing_vars, collapse = ", ")))
@@ -141,60 +165,52 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
 
   ### Run Test 1: Check all overfiltered_vars are NA
   test1_fail_caseids <- character(0)
+  test1_fail_rows <- integer(0)
   test1_success <- TRUE
   for (var in overfiltered_vars) {
     test1_fails <- which(!is.na(data[[var]]))
     if (length(test1_fails) > 0) {
       test1_success <- FALSE
       test1_fail_caseids <- c(test1_fail_caseids, unique(data$caseid[test1_fails]))
+      test1_fail_rows <- c(test1_fail_rows, test1_fails)
     }
   }
-  # reduce to unique caseids
   test1_fail_caseids <- unique(test1_fail_caseids)
+  test1_fail_rows <- unique(test1_fail_rows)
 
-  # print a message with all caseids where overfiltered_vars were not NA
-  if(!test1_success) {
-    message(paste0("Test 1: ERROR - not all overfiltered vars are NA under condition specified. Please inspect the caseid(s):", paste(test1_fail_caseids, collapse = ", ")))
+  if (!test1_success) {
+    message(paste0("Test 1: ERROR - not all overfiltered vars are NA under condition specified. Please inspect the caseid(s): ", paste(test1_fail_caseids, collapse = ", ")))
 
-    print_data1 <- data[test1_fails, ]
-    # reorder col names in dataframe so that relevant variables are shown in the first cols. the setdiff here is used to print all other vars in df behind the first 3
+    print_data1 <- data[test1_fail_rows, , drop = FALSE]
     cols_order <- c("caseid", test_var, target_var, overfiltered_vars, setdiff(names(print_data1), c("caseid", test_var, target_var, overfiltered_vars)))
-    # now we use this vec with the desired order of variables to actually sort the df
     print_data1 <- print_data1[, cols_order]
     print(print_data1)
+  } else message("Test 1: SUCCESS - all overfiltered var are NA.")
+
+  ### Run Test 2: Check target vars NA equivalence with test_var, only for non-NA test_var rows
+  not_na_test_var <- !is.na(data[[test_var]])
+
+  check_na_equivalence <- function(x, y) {
+    fail_vec <- rep(FALSE, length(x))
+    fail_vec[not_na_test_var] <- is.na(y[not_na_test_var])
+    fail_vec
   }
 
-  else message("Test 1: SUCCESS - all overfiltered var are NA.")
-
-  ### Run Test 2: Check target vars are
-  # initialize vars
-  test2_fail_caseids <- character(0)
-  test2_success <- TRUE
-
-  # define function for testing na equivalence between 2 vars in df
-  check_na_equivalence <- function(x, y) (!is.na(x)) == (!is.na(y))
-
-  # create logical vector on NA-equivalence
-  test2_fails <- !check_na_equivalence(data[[test_var]], data[[target_var]])
-  # use this to subset caseid vector
+  test2_fails <- check_na_equivalence(data[[test_var]], data[[target_var]])
   test2_fails_caseids <- unique(data$caseid[test2_fails])
-  # set flag for success = TRUE when there are no caseids
   test2_success <- length(test2_fails_caseids) == 0
 
-  if(!test2_success)
-  {
-    message(paste0("Test 2: ERROR - Target-Variable '", target_var, "' has NA mismatch with Test-Variable '", test_var, "'. Please inspect the caseid(s): ", paste(test2_fails_caseids, collapse = ", "),"."))
+  if (!test2_success) {
+    message(paste0("Test 2: ERROR - Target-Variable '", target_var, "' has NA mismatch with Test-Variable '", test_var,
+                   "'. NA mismatches where test_var is not NA. Please inspect the caseid(s): ", paste(test2_fails_caseids, collapse = ", "), "."))
 
-    print_data2 <- data[test2_fails, ]
-    # reorder col names in dataframe so that relevant variables are shown in the first cols. the setdiff here is used to print all other vars in df behind the first 3
+    print_data2 <- data[test2_fails, , drop = FALSE]
     cols_order <- c("caseid", test_var, target_var, overfiltered_vars, setdiff(names(print_data2), c("caseid", test_var, target_var, overfiltered_vars)))
-    # now we use this vec with the desired order of variables to actually sort the df
     print_data2 <- print_data2[, cols_order]
     print(print_data2)
+  } else message("Test 2: SUCCESS - No NA mismatch between test_var and target_var where test_var is not NA.")
+
+  if (length(test1_fail_caseids) > 0 || length(test2_fails_caseids) > 0) {
+    stop("Either Test 1 or Test 2 failed or both. Please check problematic caseids manually.")
   }
-  else message("Test 2: SUCCESS - No NA mismatch between test_var and target_var.")
-
-  # stop function of any of both tests failed. That means of any overfiltered vars have non NA values or if target var has NA mismatch with test variable (under specified condition)
-  if(length(test1_fail_caseids)>0 | length(test2_fail_caseids)>0) stop("Either Test 1 or Test 2 failed or both. Please check problematic caseids manually.")
-
 }

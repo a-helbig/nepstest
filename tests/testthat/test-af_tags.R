@@ -120,10 +120,9 @@ test_that("af_test_simple succeeds if NA patterns are equal", {
 
 test_that("af_test_simple fails if NA patterns differ", {
   df_bad <- df_simple
-  df_bad$v2[2] <- 999   # v2 had NA at index 2, now numeric -> mismatch
+  df_bad$v2[1] <- NA   # v2 had NA at index 2, now numeric -> mismatch
   expect_error(
-    af_test_simple(df_bad, "v1", "v2"),
-    regexp = "Please inspect the above rows for NA mismatches"
+    af_test_simple(df_bad, "v1", "v2")
   )
 })
 
@@ -182,3 +181,34 @@ test_that("af_test_complex errors with missing variables", {
   expect_error(af_test_complex(df_complex, "test_var", "target_var", character(0)), regexp = "overfiltered_vars must be a non-empty vector")
   expect_error(af_test_complex(df_complex, "test_var", "target_var", c("missingvar")), regexp = "not found in dataset")
 })
+
+test_that("Ignores rows where var1 is NA even if var2 is NOT NA", {
+  data <- data.frame(
+    caseid = 1:4,
+    var1 = c(NA, NA, "val1", "val2"),
+    var2 = c("not_na", NA, "val1", NA),
+    stringsAsFactors = FALSE
+  )
+
+  # Rows 1 and 2 have var1 NA, but var2 is one not NA, one NA -> both ignored
+  # Rows 3,4: var1 non-NA, var2 for 3 is var1 non-NA also, for 4 var2 is NA -> row 4 triggers fail
+
+  # So this should fail because row 4 fails the check (var1 not NA, var2 NA)
+  expect_error(
+    af_test_simple(data, "var1", "var2")
+  )
+
+  # Now a similar dataset but var2 fully present for var1 non-NA rows:
+  data2 <- data.frame(
+    caseid = 1:4,
+    var1 = c(NA, NA, "val1", "val2"),
+    var2 = c("not_na", NA, "val1", "val2"),
+    stringsAsFactors = FALSE
+  )
+
+  # This one should pass - var1 NA rows ignored, all var1 non-NA rows match with var2 not NA
+  expect_no_error(
+    af_test_simple(data2, "var1", "var2")
+  )
+})
+

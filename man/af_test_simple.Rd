@@ -10,7 +10,8 @@ af_test_simple(
   var2,
   condition_var = NULL,
   operator = "equal",
-  condition_value = NULL
+  condition_value = NULL,
+  empty_as_na = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ af_test_simple(
 \item{operator}{A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".}
 
 \item{condition_value}{A string that contains a digit to be used as the conditional value.}
+
+\item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is FALSE.}
 }
 \description{
 This function is designed for testing af-tags that filter from one item to the following item (under condition x).

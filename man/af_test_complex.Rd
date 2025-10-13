@@ -11,7 +11,8 @@ af_test_complex(
   overfiltered_vars,
   condition_var = NULL,
   operator = "equal",
-  condition_value = NULL
+  condition_value = NULL,
+  empty_as_na = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ af_test_complex(
 \item{operator}{A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".}
 
 \item{condition_value}{A string that contains a digit to be used as the conditional value.}
+
+\item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is FALSE.}
 }
 \description{
 This function is designed for testing af-tags that filter from one item to another item by skipping the items in between (under condition x).
