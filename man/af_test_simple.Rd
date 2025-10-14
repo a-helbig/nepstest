@@ -11,7 +11,7 @@ af_test_simple(
   condition_var = NULL,
   operator = "equal",
   condition_value = NULL,
-  empty_as_na = FALSE
+  empty_as_na = TRUE
 )
 }
 \arguments{
@@ -27,7 +27,7 @@ af_test_simple(
 
 \item{condition_value}{A string that contains a digit to be used as the conditional value.}
 
-\item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is FALSE.}
+\item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE}
 }
 \description{
 This function is designed for testing af-tags that filter from one item to the following item (under condition x).
