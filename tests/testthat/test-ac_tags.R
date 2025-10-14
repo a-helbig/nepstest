@@ -92,3 +92,68 @@ test_that("ac_test errors on invalid target_value type", {
   expect_error(ac_test(test_data, "var1", list(1,2)),
                regexp = "target_value must be either numeric or a character variable name")
 })
+
+
+
+
+# new tests:
+library(testthat)
+
+# Assuming your ac_test function is already available in the environment.
+
+test_that("error if target_var not in data (no condition params)", {
+  df <- data.frame(caseid = 1:3, A = 1:3)
+  expect_error(ac_test(df, "Z", 1), "Variable Z not found")
+})
+
+test_that("error if caseid column is missing (no condition params)", {
+  df <- data.frame(id = 1:3, A = 1:3)
+  expect_error(ac_test(df, "A", 1), "Case ID variable caseid not found")
+})
+
+test_that("numeric target_value success when all match (no condition params)", {
+  df <- data.frame(caseid = 1:3, A = c(5,5,5))
+  expect_message(ac_test(df, "A", 5), "SUCCESS")
+})
+
+test_that("numeric target_value failure when some values differ (no condition params)", {
+  df <- data.frame(caseid = 1:4, A = c(5,5,6,5))
+  expect_error(ac_test(df, "A", 5), "Problematic caseid")
+})
+
+test_that("character target_value as variable name success when all equal (no condition params)", {
+  df <- data.frame(caseid = 1:3, A = c("foo", "bar", NA), B = c("foo", "bar", NA), stringsAsFactors = FALSE)
+  expect_message(ac_test(df, "A", "B"), "SUCCESS")
+})
+
+test_that("character target_value as variable name failure when values differ (no condition params)", {
+  df <- data.frame(caseid = 1:3, A = c("foo", "bar", "baz"), B = c("foo", "bar", NA), stringsAsFactors = FALSE)
+  expect_error(ac_test(df, "A", "B"))
+})
+
+test_that("error if target_value character var name not found in data (no condition params)", {
+  df <- data.frame(caseid = 1:2, A = c(1,2))
+  expect_error(ac_test(df, "A", "nonexistent_var"))
+})
+
+test_that("error if target_value is neither numeric nor character (no condition params)", {
+  df <- data.frame(caseid = 1:2, A = c(1,2))
+  expect_error(ac_test(df, "A", list(1,2)), "target_value must be either numeric or a character variable name in data")
+})
+
+test_that("NA values are ignored properly (numeric target_value, no condition params)", {
+  df <- data.frame(caseid = 1:4, A = c(NA, 7, 7, NA))
+  expect_message(ac_test(df, "A", 7), "SUCCESS")
+
+  df2 <- data.frame(caseid = 1:4, A = c(NA, 7, 8, NA))
+  expect_error(ac_test(df2, "A", 7), "Problematic caseid")
+})
+
+test_that("NA values are ignored properly (character target_value, no condition params)", {
+  df <- data.frame(caseid = 1:3, A = c(NA, "dog", "cat"), B = c(NA, "dog", "cat"), stringsAsFactors = FALSE)
+  expect_message(ac_test(df, "A", "B"), "SUCCESS")
+
+  df2 <- data.frame(caseid = 1:3, A = c(NA, "dog", "fish"), B = c(NA, "dog", "cat"), stringsAsFactors = FALSE)
+  expect_error(ac_test(df2, "A", "B"), "Problematic caseid")
+})
+
