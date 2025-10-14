@@ -163,12 +163,15 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
     stop(paste("ERROR: The following overfiltered_vars not found in dataset:", paste(missing_vars, collapse = ", ")))
   }
 
-  ### Run Test 1: Check all overfiltered_vars are NA
+  ### Run Test 1: Check all overfiltered_vars are NA or the corresponding duration variable is 0 (that was changed in order to tackle the issue with autocodes of specific variables)
   test1_fail_caseids <- character(0)
   test1_fail_rows <- integer(0)
   test1_success <- TRUE
   for (var in overfiltered_vars) {
-    test1_fails <- which(!is.na(data[[var]]))
+    duration_var <- paste0(var, "duration") # create the duration pendant
+
+    test1_fails <- which(!is.na(data[[var]]) & (is.na(data[[duration_var]]) | data[[duration_var]] != 0))
+
     if (length(test1_fails) > 0) {
       test1_success <- FALSE
       test1_fail_caseids <- c(test1_fail_caseids, unique(data$caseid[test1_fails]))
