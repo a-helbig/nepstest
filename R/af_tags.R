@@ -54,6 +54,11 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
     stop(paste("ERROR: Variable", var2, "not found in the dataframe", data_name))
   }
 
+  # Check that if condition_var is provided, condition_value must also be provided
+  if (!is.null(condition_var) && is.null(condition_value)) {
+    stop("ERROR: condition_value must be provided when condition_var is specified.")
+  }
+
   # Subset if conditions are specified
   if (!is.null(condition_var) && !is.null(condition_value)) {
     if (!condition_var %in% names(data)) {
@@ -120,6 +125,11 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
       x[x == ""] <- NA
     }
     x
+  }
+
+  # Check that test_var and target_var are not present in overfiltered_vars
+  if (any(c(test_var, target_var) %in% overfiltered_vars)) {
+    stop("ERROR: Variables specified in test_var or target_var must not be included in overfiltered_vars.")
   }
 
   # Subset data if condition specified
