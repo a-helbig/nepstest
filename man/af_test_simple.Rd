@@ -11,7 +11,8 @@ af_test_simple(
   condition_var = NULL,
   operator = "equal",
   condition_value = NULL,
-  empty_as_na = TRUE
+  empty_as_na = TRUE,
+  print_filter_vars = NULL
 )
 }
 \arguments{
@@ -19,16 +20,39 @@ af_test_simple(
 
 \item{var1}{A string that represents the variable where we want to test the af-tag.}
 
-\item{var2}{A string that represents the variable where the af-tag is pointing too. Usually the following item.}
+\item{var2}{A string that represents the variable where the af-tag is pointing to. Usually the following item.}
 
 \item{condition_var}{A string representing a variable name to be used as a conditional variable.}
 
-\item{operator}{A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".}
+\item{operator}{A string that specifies the operator to be used for the condition. Acceptable operators include:
+\code{"equal"}, \code{"unequal"}, \code{"greater"}, \code{"smaller"},
+\code{"greaterequal"}, \code{"smallerequal"}, and \code{"inlist"}.}
 
-\item{condition_value}{A string that contains a digit to be used as the conditional value.}
+\item{condition_value}{A string or numeric value to be used as the conditional value.}
 
-\item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE}
+\item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE.}
+
+\item{print_filter_vars}{Optional character vector. Additional variable names to be included and prioritized in the printed output
+when errors are detected. This is useful for making filtered or relevant variables visible in diagnostic printouts.}
+}
+\value{
+Invisibly returns the (possibly subsetted) data if NA patterns are identical or stops with an error if discrepancies found.
 }
 \description{
 This function is designed for testing af-tags that filter from one item to the following item (under condition x).
+It checks that variables \code{var1} and \code{var2} have identical NA patterns, optionally under specified conditions.
+If any discrepancies are found, it prints the problematic cases and stops execution.
+}
+\examples{
+\dontrun{
+# Basic usage checking var1 and var2 equality of NA presence
+af_test_simple(mydata, "var1", "var2")
+
+# With conditional subsetting and custom operator
+af_test_simple(mydata, "var1", "var2", condition_var = "group", operator = "equal", condition_value = 1)
+
+# Including additional variables to print on error for visibility
+af_test_simple(mydata, "var1", "var2", print_filter_vars = c("filter_var1", "filter_var2"))
+}
+
 }

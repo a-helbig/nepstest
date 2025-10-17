@@ -12,27 +12,37 @@ af_test_complex(
   condition_var = NULL,
   operator = "equal",
   condition_value = NULL,
-  empty_as_na = TRUE
+  empty_as_na = TRUE,
+  print_filter_vars = NULL
 )
 }
 \arguments{
 \item{data}{A neps field-data dataframe.}
 
-\item{test_var}{A string that represents the variable where we want to test the af-tag.}
+\item{test_var}{A string representing the variable where we want to test the af-tag.}
 
-\item{target_var}{A string that represents the variable where the af-tag is pointing too.}
+\item{target_var}{A string representing the variable where the af-tag is pointing to.}
 
-\item{overfiltered_vars}{A string containing a single variable or a character vector of variables that will be skipped according to the af-tag and must be NA.}
+\item{overfiltered_vars}{A string or character vector of variables that must be NA as part of the skipped items.}
 
 \item{condition_var}{A string representing a variable name to be used as a conditional variable.}
 
-\item{operator}{A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".}
+\item{operator}{A string specifying the operator to be used for the condition. Acceptable operators include:
+\code{"equal"}, \code{"unequal"}, \code{"greater"}, \code{"smaller"},
+\code{"greaterequal"}, \code{"smallerequal"}, and \code{"inlist"}.}
 
-\item{condition_value}{A string that contains a digit to be used as the conditional value.}
+\item{condition_value}{A string or numeric value to be used as the conditional value.}
 
-\item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE}
+\item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE.}
+
+\item{print_filter_vars}{Optional character vector of variable names to be included and prioritized in
+the printed output when errors occur. Useful for showing filtered or relevant variables clearly.}
+}
+\value{
+Invisibly returns the (possibly subsetted) data if all tests pass or stops with an error detailing problematic cases.
 }
 \description{
-This function is designed for testing af-tags that filter from one item to another item by skipping the items in between (under condition x).
-It tests for NA equality between test_var and target_var and additionally if all vars in overfiltered_vars are NA.
+This function is designed for testing af-tags that filter from one item to another by skipping items in between (under condition x).
+It tests for NA equality between \code{test_var} and \code{target_var} and additionally whether all variables in \code{overfiltered_vars} are NA.
+If any errors occur, it prints the problematic cases with specified extra variables if requested.
 }

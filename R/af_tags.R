@@ -24,18 +24,39 @@ subset_data <- function(data, condition_var, condition_value, operator){
 
 #' Tests for NA equality between var1 and var2
 #'
-#' @description This function is designed for testing af-tags that filter from one item to the following item (under condition x).
+#' @description
+#' This function is designed for testing af-tags that filter from one item to the following item (under condition x).
+#' It checks that variables `var1` and `var2` have identical NA patterns, optionally under specified conditions.
+#' If any discrepancies are found, it prints the problematic cases and stops execution.
 #'
 #' @param data A neps field-data dataframe.
 #' @param var1 A string that represents the variable where we want to test the af-tag.
-#' @param var2 A string that represents the variable where the af-tag is pointing too. Usually the following item.
+#' @param var2 A string that represents the variable where the af-tag is pointing to. Usually the following item.
 #' @param condition_var A string representing a variable name to be used as a conditional variable.
-#' @param operator A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".
-#' @param condition_value A string that contains a digit to be used as the conditional value.
-#' @param empty_as_na Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE
+#' @param operator A string that specifies the operator to be used for the condition. Acceptable operators include:
+#'   \code{"equal"}, \code{"unequal"}, \code{"greater"}, \code{"smaller"},
+#'   \code{"greaterequal"}, \code{"smallerequal"}, and \code{"inlist"}.
+#' @param condition_value A string or numeric value to be used as the conditional value.
+#' @param empty_as_na Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE.
+#' @param print_filter_vars Optional character vector. Additional variable names to be included and prioritized in the printed output
+#'   when errors are detected. This is useful for making filtered or relevant variables visible in diagnostic printouts.
+#'
+#' @return Invisibly returns the (possibly subsetted) data if NA patterns are identical or stops with an error if discrepancies found.
+#'
+#' @examples
+#' \dontrun{
+#' # Basic usage checking var1 and var2 equality of NA presence
+#' af_test_simple(mydata, "var1", "var2")
+#'
+#' # With conditional subsetting and custom operator
+#' af_test_simple(mydata, "var1", "var2", condition_var = "group", operator = "equal", condition_value = 1)
+#'
+#' # Including additional variables to print on error for visibility
+#' af_test_simple(mydata, "var1", "var2", print_filter_vars = c("filter_var1", "filter_var2"))
+#' }
 #'
 #' @export af_test_simple
-af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "equal", condition_value = NULL, empty_as_na = TRUE) {
+af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "equal", condition_value = NULL, empty_as_na = TRUE, print_filter_vars = NULL) {
   data_name <- deparse(substitute(data))
 
   # Helper to replace "" with NA in character vectors if requested
@@ -81,8 +102,21 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
     id_info <- paste("Problematic caseid(s):", paste(unique(fail_caseids), collapse = ", "))
 
     print_data <- data[fail_idx, ]
-    # reorder col names in dataframe so that relevant variables are shown in the first cols. the setdiff here is used to print all other vars in df behind the first 3
-    cols_order <- c("caseid", var1, var2, setdiff(names(print_data), c("caseid", var1, var2)))
+
+    # Validate print_filter_vars exist in the data columns
+    valid_filter_vars <- print_filter_vars[print_filter_vars %in% names(print_data)]
+
+    # Build cols_order: caseid, var1, var2, then print_filter_vars, then the rest
+    cols_order <- c("caseid", var1, var2)
+
+    # Append print_filter_vars that are not already in cols_order to avoid duplicates
+    if (!is.null(valid_filter_vars)) {
+      cols_order <- c(cols_order, setdiff(valid_filter_vars, cols_order))
+    }
+
+    # Append the rest of the columns, excluding those already included
+    cols_order <- c(cols_order, setdiff(names(print_data), cols_order))
+
     print_data <- print_data[, cols_order, drop = FALSE]
 
     message("ERROR: Unequal NA presence between '", var1, "' and '", var2, "'.")
@@ -99,27 +133,35 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
 }
 
 
-
 #' Tests complex af-tag filters
 #'
-#' @description This function is designed for testing af-tags that filter from one item to another item by skipping the items in between (under condition x).
-#' It tests for NA equality between test_var and target_var and additionally if all vars in overfiltered_vars are NA.
+#' @description
+#' This function is designed for testing af-tags that filter from one item to another by skipping items in between (under condition x).
+#' It tests for NA equality between \code{test_var} and \code{target_var} and additionally whether all variables in \code{overfiltered_vars} are NA.
+#' If any errors occur, it prints the problematic cases with specified extra variables if requested.
 #'
 #' @param data A neps field-data dataframe.
-#' @param test_var A string that represents the variable where we want to test the af-tag.
-#' @param target_var A string that represents the variable where the af-tag is pointing too.
-#' @param overfiltered_vars A string containing a single variable or a character vector of variables that will be skipped according to the af-tag and must be NA.
+#' @param test_var A string representing the variable where we want to test the af-tag.
+#' @param target_var A string representing the variable where the af-tag is pointing to.
+#' @param overfiltered_vars A string or character vector of variables that must be NA as part of the skipped items.
 #' @param condition_var A string representing a variable name to be used as a conditional variable.
-#' @param operator A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".
-#' @param condition_value A string that contains a digit to be used as the conditional value.
-#' @param empty_as_na Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE
+#' @param operator A string specifying the operator to be used for the condition. Acceptable operators include:
+#'   \code{"equal"}, \code{"unequal"}, \code{"greater"}, \code{"smaller"},
+#'   \code{"greaterequal"}, \code{"smallerequal"}, and \code{"inlist"}.
+#' @param condition_value A string or numeric value to be used as the conditional value.
+#' @param empty_as_na Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE.
+#' @param print_filter_vars Optional character vector of variable names to be included and prioritized in
+#'  the printed output when errors occur. Useful for showing filtered or relevant variables clearly.
+#'
+#' @return Invisibly returns the (possibly subsetted) data if all tests pass or stops with an error detailing problematic cases.
 #'
 #' @export af_test_complex
 af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condition_var = NULL,
-                            operator = "equal", condition_value = NULL, empty_as_na = TRUE) {
+                            operator = "equal", condition_value = NULL, empty_as_na = TRUE,
+                            print_filter_vars = NULL) {
   data_name <- deparse(substitute(data))
 
-  # Helper that replaces empty strings with NA in character vectors if flag is TRUE
+  # Helper to replace "" with NA if requested
   replace_empty_with_na <- function(x, empty_as_na) {
     if (empty_as_na && is.character(x)) {
       x[x == ""] <- NA
@@ -127,7 +169,7 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
     x
   }
 
-  # Check that test_var and target_var are not present in overfiltered_vars
+  # test_var and target_var should NOT be in overfiltered_vars
   if (any(c(test_var, target_var) %in% overfiltered_vars)) {
     stop("ERROR: Variables specified in test_var or target_var must not be included in overfiltered_vars.")
   }
@@ -145,19 +187,16 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
     stop(paste("ERROR: test_var", test_var, "not found in the dataframe"))
   }
 
-  # Replace empty strings with NA in test_var, target_var, and overfiltered_vars
   data[[test_var]] <- replace_empty_with_na(data[[test_var]], empty_as_na)
 
-  # Subset rows where test_var is not NA (same as original behavior)
+  # Keep only rows where test_var is not NA
   data <- data[!is.na(data[[test_var]]), ]
 
   if (!target_var %in% names(data)) {
     stop(paste("ERROR: target_var", target_var, "not found in the dataframe"))
   }
 
-  # replace empty strings "''" with NA.
   data[[target_var]] <- replace_empty_with_na(data[[target_var]], empty_as_na)
-
   data[[test_var]] <- replace_empty_with_na(data[[test_var]], empty_as_na)
 
   for (var in overfiltered_vars) {
@@ -173,18 +212,18 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
     stop(paste("ERROR: The following overfiltered_vars not found in dataset:", paste(missing_vars, collapse = ", ")))
   }
 
-  ### Run Test 1: Check all overfiltered_vars are NA or the corresponding duration variable is 0 (that was changed in order to tackle the issue with autocodes of specific variables). The latter will only be checked when a corresponding duration variable exists
+  ### Test 1: Check all overfiltered_vars are NA or duration vars are 0 (if duration vars exist)
   test1_fail_caseids <- character(0)
   test1_fail_rows <- integer(0)
   test1_success <- TRUE
   for (var in overfiltered_vars) {
-    duration_var <- paste0(var, "duration") # create the duration pendant
+    duration_var <- paste0(var, "duration")
 
     if (duration_var %in% names(data)) {
-      # Duration var exists: fail if var not NA AND (duration var is NA or != 0)
+      # fail if var not NA AND (duration var is NA or != 0)
       test1_fails <- which(!is.na(data[[var]]) & (is.na(data[[duration_var]]) | data[[duration_var]] != 0))
     } else {
-      # Duration var missing: fail if var is not NA (original test)
+      # fail if var not NA
       test1_fails <- which(!is.na(data[[var]]))
     }
 
@@ -198,15 +237,28 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
   test1_fail_rows <- unique(test1_fail_rows)
 
   if (!test1_success) {
-    message(paste0("Test 1: ERROR - not all overfiltered vars are NA under condition specified. Please inspect the caseid(s): ", paste(test1_fail_caseids, collapse = ", ")))
+    message(paste0("Test 1: ERROR - not all overfiltered vars are NA under condition specified. Please inspect caseid(s): ", paste(test1_fail_caseids, collapse = ", ")))
 
     print_data1 <- data[test1_fail_rows, , drop = FALSE]
-    cols_order <- c("caseid", test_var, target_var, overfiltered_vars, setdiff(names(print_data1), c("caseid", test_var, target_var, overfiltered_vars)))
-    print_data1 <- print_data1[, cols_order]
-    print(print_data1)
-  } else message("Test 1: SUCCESS - all overfiltered var are NA.")
 
-  ### Run Test 2: Check target vars NA equivalence with test_var, only for non-NA test_var rows
+    # Validate print_filter_vars exist in print_data1
+    valid_filter_vars <- print_filter_vars[print_filter_vars %in% names(print_data1)]
+
+    # Compose column order with prioritization of print_filter_vars
+    cols_order <- c("caseid", test_var, target_var, overfiltered_vars)
+    if (!is.null(valid_filter_vars)) {
+      cols_order <- c(cols_order, setdiff(valid_filter_vars, cols_order))
+    }
+    cols_order <- c(cols_order, setdiff(names(print_data1), cols_order))
+
+    print_data1 <- print_data1[, cols_order, drop = FALSE]
+
+    print(print_data1)
+  } else {
+    message("Test 1: SUCCESS - all overfiltered vars are NA.")
+  }
+
+  ### Test 2: Check target_var NA equivalence with test_var, only for non-NA test_var rows
   not_na_test_var <- !is.na(data[[test_var]])
 
   check_na_equivalence <- function(x, y) {
@@ -221,15 +273,31 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
 
   if (!test2_success) {
     message(paste0("Test 2: ERROR - Target-Variable '", target_var, "' has NA mismatch with Test-Variable '", test_var,
-                   "'. NA mismatches where test_var is not NA. Please inspect the caseid(s): ", paste(test2_fails_caseids, collapse = ", "), "."))
+                   "'. NA mismatches where test_var is not NA. Please inspect caseid(s): ", paste(test2_fails_caseids, collapse = ", "), "."))
 
     print_data2 <- data[test2_fails, , drop = FALSE]
-    cols_order <- c("caseid", test_var, target_var, overfiltered_vars, setdiff(names(print_data2), c("caseid", test_var, target_var, overfiltered_vars)))
-    print_data2 <- print_data2[, cols_order]
-    print(print_data2)
-  } else message("Test 2: SUCCESS - No NA mismatch between test_var and target_var where test_var is not NA.")
 
+    # Validate print_filter_vars exist in print_data2
+    valid_filter_vars <- print_filter_vars[print_filter_vars %in% names(print_data2)]
+
+    # Compose column order with prioritization of print_filter_vars
+    cols_order <- c("caseid", test_var, target_var, overfiltered_vars)
+    if (!is.null(valid_filter_vars)) {
+      cols_order <- c(cols_order, setdiff(valid_filter_vars, cols_order))
+    }
+    cols_order <- c(cols_order, setdiff(names(print_data2), cols_order))
+
+    print_data2 <- print_data2[, cols_order, drop = FALSE]
+
+    print(print_data2)
+  } else {
+    message("Test 2: SUCCESS - No NA mismatch between test_var and target_var where test_var is not NA.")
+  }
+
+  # Stop if either test failed
   if (length(test1_fail_caseids) > 0 || length(test2_fails_caseids) > 0) {
     stop("Either Test 1 or Test 2 failed or both. Please check problematic caseids manually.")
   }
+
+  invisible(data)
 }
