@@ -157,3 +157,124 @@ test_that("NA values are ignored properly (character target_value, no condition 
   expect_error(ac_test(df2, "A", "B"), "Problematic caseid")
 })
 
+
+
+
+# added new argument to the function: print_filter_vars which allows the user to specify variables that should also be printed in the case of errors. Mostly vars that are used to filter the dataframe supplied to the function in the data argument.
+
+# Helper to suppress messages and errors so testthat output is cleaner
+quiet <- function(expr) {
+  suppressMessages(suppressWarnings(tryCatch(expr, error=function(e) e)))
+}
+
+# Sample test dataframe for testing
+test_data <- data.frame(
+  caseid = 1:5,
+  h_etumf = c(1, 1, 2, 1, NA),
+  etazv = c(15, 20, 15, 30, 45),
+  other_var = letters[1:5],
+  stringsAsFactors = FALSE
+)
+
+test_that("ac_test works without print_filter_vars (default NULL)", {
+
+  # Should succeed because h_etumf == 1 except for one row with 2 (row 3)
+  result <- quiet(ac_test(test_data, "h_etumf", 1))
+
+  expect_s3_class(result, "error") # Because it will error on unexpected value
+
+  # Now with target_value including 2 so all pass
+  expect_message(
+    ac_test(test_data, "h_etumf", c(1, 2)),
+    regexp = "SUCCESS"
+  )
+})
+
+test_that("ac_test stops if print_filter_vars includes missing variables", {
+  expect_error(
+    ac_test(test_data, "h_etumf", 1, print_filter_vars = c("not_a_var")),
+    regexp = "Filter variables not found: not_a_var"
+  )
+})
+
+test_that("print_filter_vars influences column ordering in error print", {
+  # Trigger error with filter_vars included in print_filter_vars:
+  # capture printed output and check column order
+
+  # Use a helper to capture output printed by message() and print()
+  out <- capture.output(
+    err <- quiet(
+      ac_test(test_data, "h_etumf", 1, print_filter_vars = c("etazv"))
+    )
+  )
+
+  # The first few lines printed MUST include the 'caseid', 'h_etumf', and 'etazv' columns in that order
+  # Find the line which is the printed table — likely after the error message line.
+
+  printed_table_line <- which(grepl("caseid", out))
+  expect_true(length(printed_table_line) > 0)
+
+  # Extract column headers line from printout (usually first line after message)
+  header_line <- out[printed_table_line[1]]
+
+  expect_true(grepl("caseid", header_line))
+  expect_true(grepl("h_etumf", header_line))
+  expect_true(grepl("etazv", header_line))
+
+  # Check that columns appear in order: caseid before h_etumf before etazv
+  pos_caseid <- regexpr("caseid", header_line)[1]
+  pos_h_etumf <- regexpr("h_etumf", header_line)[1]
+  pos_etazv <- regexpr("etazv", header_line)[1]
+  expect_true(pos_caseid < pos_h_etumf)
+  expect_true(pos_h_etumf < pos_etazv)
+})
+
+test_that("print_filter_vars works with multiple variables", {
+  test_data$another_var <- 101:105
+
+  # Provide multiple extra columns
+  out <- capture.output(
+    err <- quiet(
+      ac_test(test_data, "h_etumf", 1, print_filter_vars = c("etazv", "another_var"))
+    )
+  )
+
+  header_line <- out[which(grepl("caseid", out))[1]]
+
+  expect_true(all(c("caseid", "h_etumf", "etazv", "another_var") %in% strsplit(header_line, " +")[[1]]))
+
+  # Check order of columns
+  pos_caseid <- regexpr("caseid", header_line)[1]
+  pos_h_etumf <- regexpr("h_etumf", header_line)[1]
+  pos_etazv <- regexpr("etazv", header_line)[1]
+  pos_another <- regexpr("another_var", header_line)[1]
+
+  expect_true(pos_caseid < pos_h_etumf)
+  expect_true(pos_h_etumf < pos_etazv)
+  expect_true(pos_etazv < pos_another)
+})
+
+test_that("ac_test errors on wrong target_value type", {
+  expect_error(
+    ac_test(test_data, "h_etumf", list(1, 2)),
+    regexp = "target_value must be either numeric or a character variable name"
+  )
+})
+
+test_that("ac_test errors on mismatched values even when print_filter_vars is NULL or empty", {
+  # Using expect_error on the stop message text
+  expect_error(
+    ac_test(test_data, "h_etumf", 1),
+    regexp = "Problematic caseid"
+  )
+
+  expect_error(
+    ac_test(test_data, "h_etumf", 1, print_filter_vars = NULL),
+    regexp = "Problematic caseid"
+  )
+
+  expect_error(
+    ac_test(test_data, "h_etumf", 1, print_filter_vars = character(0)),
+    regexp = "Problematic caseid"
+  )
+})

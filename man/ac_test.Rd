@@ -2,7 +2,7 @@
 % Please edit documentation in R/ac_tags.R
 \name{ac_test}
 \alias{ac_test}
-\title{Tests if target variable equals target value}
+\title{Test if a target variable equals a specified value or another variable's value}
 \usage{
 ac_test(
   data,
@@ -10,22 +10,63 @@ ac_test(
   target_value,
   condition_var = NULL,
   operator = "equal",
-  condition_value = NULL
+  condition_value = NULL,
+  print_filter_vars = NULL
 )
 }
 \arguments{
-\item{data}{A neps field-data dataframe.}
+\item{data}{A dataframe (typically a neps field-data dataframe).}
 
-\item{target_var}{A string that represents a variable within the dataframe.}
+\item{target_var}{A string specifying the name of the variable to test in the dataframe.}
 
-\item{target_value}{A string that can either be a digit or a variable name present in the dataframe.}
+\item{target_value}{Either:
+\itemize{
+\item a numeric vector of expected values, or
+\item a string specifying the name of another variable in the dataframe whose values are compared against \code{target_var}.
+}}
 
-\item{condition_var}{A string representing a variable name to be used as a conditional variable.}
+\item{condition_var}{Optional string specifying a variable name to subset/filter the data before testing.}
 
-\item{operator}{A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".}
+\item{operator}{Optional string specifying the comparison operator used for subsetting. One of:
+\code{"equal"}, \code{"unequal"}, \code{"greater"}, \code{"smaller"}, \code{"greaterequal"}, \code{"smallerequal"}, or \code{"inlist"}.
+Defaults to \code{"equal"}.}
 
-\item{condition_value}{A string that contains a digit to be used as the conditional value.}
+\item{condition_value}{Optional numeric or character value used in conjunction with \code{condition_var} and \code{operator}
+to subset the data before testing.}
+
+\item{print_filter_vars}{Optional character vector specifying additional variable names whose columns should be prioritized
+and displayed early in error prints to assist debugging (e.g. variables used in \code{filter()} prior to calling \code{ac_test}).}
+}
+\value{
+Invisibly returns NULL. Function either prints a success message or stops with a detailed error.
 }
 \description{
-This function is designed to test ac-tags. It takes a dataset in data argument and tests if the variable in test_var argument equals the value or the variables value in argument target_var.
+This function is designed to test ac-tags by comparing values in a dataframe.
+It takes a dataframe as input and tests whether the variable given by \code{target_var}
+equals either a fixed value or the values of another variable in the dataframe (\code{target_value}).
+Optionally, a conditional subset of the data can be specified to restrict the test.
+
+The function reports success if all tested rows meet the condition.
+If any rows do not meet the condition, it prints case IDs and relevant variables (including those specified
+in \code{print_filter_vars}) for debugging, then stops with an error.
+}
+\details{
+The function expects \code{caseid} column in the data by default and always includes it in output.
+When errors occur, output tables prioritize columns in the following order:
+\code{caseid}, \code{target_var}, variables in \code{print_filter_vars}, then all other columns.
+}
+\examples{
+\dontrun{
+# Simple test that h_etumf equals 1
+ac_test(mydata, target_var = "h_etumf", target_value = 1)
+
+# Test that h_etumf equals values of another variable h_expected
+ac_test(mydata, target_var = "h_etumf", target_value = "h_expected")
+
+# Test on a subset of data where etazv is between 15 and 90, prioritizing etazv in error prints
+filtered_data <- mydata \%>\% filter(etazv \%in\% c(15:90, -20))
+ac_test(filtered_data, target_var = "h_etumf", target_value = 1,
+        print_filter_vars = c("etazv"))
+}
+
 }

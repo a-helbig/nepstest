@@ -1,17 +1,52 @@
-
-#' Tests if target variable equals target value
+#' Test if a target variable equals a specified value or another variable's value
 #'
-#' @description This function is designed to test ac-tags. It takes a dataset in data argument and tests if the variable in test_var argument equals the value or the variables value in argument target_var.
+#' @description
+#' This function is designed to test ac-tags by comparing values in a dataframe.
+#' It takes a dataframe as input and tests whether the variable given by `target_var`
+#' equals either a fixed value or the values of another variable in the dataframe (`target_value`).
+#' Optionally, a conditional subset of the data can be specified to restrict the test.
 #'
-#' @param data A neps field-data dataframe.
-#' @param target_var A string that represents a variable within the dataframe.
-#' @param target_value A string that can either be a digit or a variable name present in the dataframe.
-#' @param condition_var A string representing a variable name to be used as a conditional variable.
-#' @param operator A string that specifies the operator to be used for the condition. Acceptable operators include: "equal", "unequal", "greater", "smaller", "greaterequal", "smallerequal", and "inlist".
-#' @param condition_value A string that contains a digit to be used as the conditional value.
+#' The function reports success if all tested rows meet the condition.
+#' If any rows do not meet the condition, it prints case IDs and relevant variables (including those specified
+#' in `print_filter_vars`) for debugging, then stops with an error.
 #'
-#' @export ac_test
-ac_test <- function(data, target_var, target_value, condition_var = NULL, operator = "equal", condition_value = NULL) {
+#' @param data A dataframe (typically a neps field-data dataframe).
+#' @param target_var A string specifying the name of the variable to test in the dataframe.
+#' @param target_value Either:
+#'   - a numeric vector of expected values, or
+#'   - a string specifying the name of another variable in the dataframe whose values are compared against `target_var`.
+#' @param condition_var Optional string specifying a variable name to subset/filter the data before testing.
+#' @param operator Optional string specifying the comparison operator used for subsetting. One of:
+#'   `"equal"`, `"unequal"`, `"greater"`, `"smaller"`, `"greaterequal"`, `"smallerequal"`, or `"inlist"`.
+#'   Defaults to `"equal"`.
+#' @param condition_value Optional numeric or character value used in conjunction with `condition_var` and `operator`
+#'   to subset the data before testing.
+#' @param print_filter_vars Optional character vector specifying additional variable names whose columns should be prioritized
+#'   and displayed early in error prints to assist debugging (e.g. variables used in `filter()` prior to calling `ac_test`).
+#'
+#' @return Invisibly returns NULL. Function either prints a success message or stops with a detailed error.
+#'
+#' @details
+#' The function expects `caseid` column in the data by default and always includes it in output.
+#' When errors occur, output tables prioritize columns in the following order:
+#' `caseid`, `target_var`, variables in `print_filter_vars`, then all other columns.
+#'
+#' @examples
+#' \dontrun{
+#' # Simple test that h_etumf equals 1
+#' ac_test(mydata, target_var = "h_etumf", target_value = 1)
+#'
+#' # Test that h_etumf equals values of another variable h_expected
+#' ac_test(mydata, target_var = "h_etumf", target_value = "h_expected")
+#'
+#' # Test on a subset of data where etazv is between 15 and 90, prioritizing etazv in error prints
+#' filtered_data <- mydata %>% filter(etazv %in% c(15:90, -20))
+#' ac_test(filtered_data, target_var = "h_etumf", target_value = 1,
+#'         print_filter_vars = c("etazv"))
+#' }
+#'
+#' @export
+ac_test <- function(data, target_var, target_value, condition_var = NULL, operator = "equal", condition_value = NULL, print_filter_vars = NULL) {
   caseid_var <- "caseid"  # hardcoded default caseid column
 
   # Check required columns: target_var must be found as a variable name in data
@@ -33,10 +68,32 @@ ac_test <- function(data, target_var, target_value, condition_var = NULL, operat
     data <- subset_data(data, condition_var, condition_value, operator)
   }
 
+  # Check extra_vars exist
+  if(!is.null(print_filter_vars)) {
+    missing_vars <- setdiff(print_filter_vars, names(data))
+    if(length(missing_vars) > 0) {
+      stop(paste("ERROR: Filter variables not found:", paste(missing_vars, collapse = ", ")))
+    }
+  }
+
   # Function to reorder columns: caseid first, target_var second, then others. We do this because we print dataframe snippets in order to get a quick glance at different relevant variables in case of errors.
   reorder_cols <- function(df) {
-    others <- setdiff(names(df), c(caseid_var, target_var))
-    df[, c(caseid_var, target_var, others), drop = FALSE]
+    filter_vars <- if (!is.null(print_filter_vars)) {
+      print_filter_vars[print_filter_vars %in% names(df)]
+    } else {
+      character(0)
+    }
+    others <- setdiff(names(df), c(caseid_var, target_var,filter_vars))
+    df[, c(caseid_var, target_var, filter_vars, others), drop = FALSE]
+  }
+
+  print_fail_rows <- function(fail_rows) {
+    df_print <- reorder_cols(fail_rows)
+    # For wide data, show only a limited number of columns (say max 10 columns)
+    max_cols_to_show <- 10
+    cols_to_print <- head(names(df_print), max_cols_to_show)
+    message(paste("Showing first", max_cols_to_show, "columns of failing rows (columns truncated if data is wider):"))
+    print(df_print[, cols_to_print, drop = FALSE])
   }
 
    # 1. USE CASE: Numeric target_var specification
@@ -54,7 +111,7 @@ ac_test <- function(data, target_var, target_value, condition_var = NULL, operat
 
       fail_caseids <- unique(fail_rows[[caseid_var]])
       message("ERROR: Target variable '", target_var, "' contains unexpected values.")
-      print(reorder_cols(fail_rows))
+      print_fail_rows(fail_rows)
 
       # after the output, we stop the function and the script execution
       stop(paste0("Problematic caseid(s): ", paste(fail_caseids, collapse = ", ")))
@@ -81,7 +138,7 @@ ac_test <- function(data, target_var, target_value, condition_var = NULL, operat
       fail_rows <- data[fail_idx, ]
       fail_caseids <- unique(fail_rows[[caseid_var]])
       message("ERROR: Target Variable '", target_var, "' does NOT match variable '", target_value, "'. Rows with failures: ")
-      print(reorder_cols(fail_rows))
+      print_fail_rows(fail_rows)
       stop(paste0("Problematic caseid(s): ", paste(fail_caseids, collapse = ", ")))
     }
   }
