@@ -218,7 +218,7 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
   test1_success <- TRUE
   for (var in overfiltered_vars) {
     # consider both "variableduration" and "src_variableduration"
-    duration_candidates <- c(paste0(var, "duration"), paste0("src_", var, "duration"))
+    duration_candidates <- c(paste0(var, "duration"), paste0("scr_", var, "duration"))
 
     duration_var <- duration_candidates[duration_candidates %in% names(data)]
 
