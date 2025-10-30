@@ -225,12 +225,12 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
       # skip duration check: fail if var not NA
       test1_fails <- which(!is.na(data[[var]]))
     } else {
-      # consider both "variableduration" and "src_variableduration"
-      duration_candidates <- c(paste0(var, "duration"), paste0("src_", var, "duration"))
+      # consider both "variableduration" and "scr_variableduration"
+      duration_candidates <- c(paste0(var, "duration"), paste0("scr_", var, "duration"),paste0("src_", var, "duration"))
       duration_var <- duration_candidates[duration_candidates %in% names(data)]
 
       if (length(duration_var) > 0) {
-        # prefer the non-src variant if both exist
+        # prefer the non-scr variant if both exist
         if (length(duration_var) > 1 && duration_candidates[1] %in% duration_var) {
           duration_var <- duration_candidates[1]
         } else {
