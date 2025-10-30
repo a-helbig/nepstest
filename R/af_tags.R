@@ -217,23 +217,31 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
   test1_fail_rows <- integer(0)
   test1_success <- TRUE
   for (var in overfiltered_vars) {
-    # consider both "variableduration" and "src_variableduration"
-    duration_candidates <- c(paste0(var, "duration"), paste0("scr_", var, "duration"))
+    # if variable has a label that starts with "Zeitstempel", skip duration checks
+    lbl <- attr(data[[var]], "label", exact = TRUE)
+    is_timestamp_label <- !is.null(lbl) && is.character(lbl) && length(lbl) > 0 && startsWith(lbl, "Zeitstempel")
 
-    duration_var <- duration_candidates[duration_candidates %in% names(data)]
-
-    if (length(duration_var) > 0) {
-      # prefer the non-src variant if both exist
-      if (length(duration_var) > 1 && duration_candidates[1] %in% duration_var) {
-        duration_var <- duration_candidates[1]
-      } else {
-        duration_var <- duration_var[1]
-      }
-      # fail if var not NA AND duration exists AND duration is non-NA AND duration != 0
-      test1_fails <- which(!is.na(data[[var]]) & (!is.na(data[[duration_var]]) & data[[duration_var]] != 0))
-    } else {
-      # no duration var found: fail if var not NA
+    if (is_timestamp_label) {
+      # skip duration check: fail if var not NA
       test1_fails <- which(!is.na(data[[var]]))
+    } else {
+      # consider both "variableduration" and "src_variableduration"
+      duration_candidates <- c(paste0(var, "duration"), paste0("src_", var, "duration"))
+      duration_var <- duration_candidates[duration_candidates %in% names(data)]
+
+      if (length(duration_var) > 0) {
+        # prefer the non-src variant if both exist
+        if (length(duration_var) > 1 && duration_candidates[1] %in% duration_var) {
+          duration_var <- duration_candidates[1]
+        } else {
+          duration_var <- duration_var[1]
+        }
+        # fail if var not NA AND duration exists AND duration is non-NA AND duration != 0
+        test1_fails <- which(!is.na(data[[var]]) & (!is.na(data[[duration_var]]) & data[[duration_var]] != 0))
+      } else {
+        # no duration var found: fail if var not NA
+        test1_fails <- which(!is.na(data[[var]]))
+      }
     }
 
     if (length(test1_fails) > 0) {
