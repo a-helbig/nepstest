@@ -1,6 +1,6 @@
 Package: nepstest
 Title: What the Package Does (One Line, Title Case)
-Version: 0.0.3
+Version: 0.0.4
 Authors@R: 
     person("Alexander", "Helbig", , "alexander.helbig@wzb.eu", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
