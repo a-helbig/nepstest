@@ -212,18 +212,27 @@ af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condi
     stop(paste("ERROR: The following overfiltered_vars not found in dataset:", paste(missing_vars, collapse = ", ")))
   }
 
-  ### Test 1: Check all overfiltered_vars are NA or duration vars are 0 (if duration vars exist)
+  ### Test 1: Check all overfiltered_vars are NA or duration vars are 0 or NA (if duration vars exist)
   test1_fail_caseids <- character(0)
   test1_fail_rows <- integer(0)
   test1_success <- TRUE
   for (var in overfiltered_vars) {
-    duration_var <- paste0(var, "duration")
+    # consider both "variableduration" and "src_variableduration"
+    duration_candidates <- c(paste0(var, "duration"), paste0("src_", var, "duration"))
 
-    if (duration_var %in% names(data)) {
-      # fail if var not NA AND (duration var is NA or != 0)
-      test1_fails <- which(!is.na(data[[var]]) & (is.na(data[[duration_var]]) | data[[duration_var]] != 0))
+    duration_var <- duration_candidates[duration_candidates %in% names(data)]
+
+    if (length(duration_var) > 0) {
+      # prefer the non-src variant if both exist
+      if (length(duration_var) > 1 && duration_candidates[1] %in% duration_var) {
+        duration_var <- duration_candidates[1]
+      } else {
+        duration_var <- duration_var[1]
+      }
+      # fail if var not NA AND duration exists AND duration is non-NA AND duration != 0
+      test1_fails <- which(!is.na(data[[var]]) & (!is.na(data[[duration_var]]) & data[[duration_var]] != 0))
     } else {
-      # fail if var not NA
+      # no duration var found: fail if var not NA
       test1_fails <- which(!is.na(data[[var]]))
     }
 
