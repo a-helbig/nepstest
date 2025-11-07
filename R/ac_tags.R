@@ -96,45 +96,39 @@ ac_test <- function(data, target_var, target_value, condition_var = NULL, operat
     print(df_print[, cols_to_print, drop = FALSE])
   }
 
-   # 1. USE CASE: Numeric target_var specification
+  # 1. USE CASE: Numeric target_var specification
   if (is.numeric(target_value)) {
-    # Rows where values are NOT in target_value or NA:
-    fail_rows <- data[!(data[[target_var]] %in% target_value | is.na(data[[target_var]])), ]
+    # suppress labelled value label warnings here
+    fail_rows <- suppressWarnings(
+      data[!(data[[target_var]] %in% target_value | is.na(data[[target_var]])), ]
+    )
 
-    # TEST SUCCESS: If there are no Errors, print success message
-    if(nrow(fail_rows) == 0) {
+    if (nrow(fail_rows) == 0) {
       message(paste0("SUCCESS: The '", target_var, "' variable contains only values in '", paste(target_value, collapse = ", "), "'"))
-    }
-
-      # TEST FAIL: if there are Errors, make a df with failing caseids and then print Error message with these caseids and print df with these caseids
-     else if(nrow(fail_rows) > 0) {
-
+    } else if (nrow(fail_rows) > 0) {
       fail_caseids <- unique(fail_rows[[caseid_var]])
       message("ERROR: Target variable '", target_var, "' contains unexpected values.")
       print_fail_rows(fail_rows)
-
-      # after the output, we stop the function and the script execution
       stop(paste0("Problematic caseid(s): ", paste(fail_caseids, collapse = ", ")))
-     }
+    }
   }
 
   # 2. USE CASE: Character target_var specification (user supplies variable instead of value)
   else if (is.character(target_value)) {
-    # first, check if the supplied character is avaiable as a var in data, if not, break function/script
     if (!(target_value %in% names(data))) {
       stop(paste("ERROR: Target value' ", target_value, "' not found as a variable in the dataframe"))
     }
-    # here we collect cases that have not either NA values on both, target_var and target_value or are not equal
-    fail_idx <- !((is.na(data[[target_var]]) & is.na(data[[target_value]])) |
-                     (data[[target_var]] == data[[target_value]]) )
 
-    # TEST SUCCESS: If there are no Errors, print success message
+    equals <- suppressWarnings(data[[target_var]] == data[[target_value]])
+    equals[is.na(equals)] <- FALSE
+
+    both_na <- is.na(data[[target_var]]) & is.na(data[[target_value]])
+
+    fail_idx <- !(both_na | equals)
+
     if (!any(fail_idx)) {
       message(paste0("SUCCESS: The '", target_var, "' variable equals variable '", target_value, "'"))
-    }
-
-    # TEST FAIL: if there are Errors, make a df with failing caseids and then print Error message with these caseids and print df with these caseids
-    else {
+    } else {
       fail_rows <- data[fail_idx, ]
       fail_caseids <- unique(fail_rows[[caseid_var]])
       message("ERROR: Target Variable '", target_var, "' does NOT match variable '", target_value, "'. Rows with failures: ")

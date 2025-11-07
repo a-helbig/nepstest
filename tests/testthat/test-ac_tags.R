@@ -278,3 +278,28 @@ test_that("ac_test errors on mismatched values even when print_filter_vars is NU
     regexp = "Problematic caseid"
   )
 })
+
+
+test_that("ac_test handles NA values correctly in variable comparisons without error", {
+  df <- data.frame(
+    caseid = 1:5,
+    a = c(1, NA, 3, NA, 5),
+    b = c(1, NA, 2, NA, 5)
+  )
+
+  # 1 & 4 and 5 rows match including NA equality, rows 3 mismatches
+
+  # Expect an error mentioning problematic caseid(s) but no unexpected NA handling error
+  expect_error(
+    ac_test(df, target_var = "a", target_value = "b"),
+    regexp = "Problematic caseid"
+  )
+
+  # Now fix mismatch; all equal or both NA
+  df$b[3] <- 3
+  # Now expect success message (no error)
+  expect_message(
+    ac_test(df, target_var = "a", target_value = "b"),
+    regexp = "SUCCESS"
+  )
+})
