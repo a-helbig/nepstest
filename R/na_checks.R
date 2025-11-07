@@ -25,7 +25,7 @@ only_na_in_vars <- function(data, var_names, condition_var=NULL, operator = "equ
   if (any(!na_checks)) {
     stop("ERROR: Not all specified variables are NA under the given condition.")
   } else {
-    print("Success: All specified variables are NA under the given condition.")
+    print("SUCCESS: All specified variables are NA under the given condition.")
   }
 }
 
@@ -73,9 +73,9 @@ no_na_in_vars <- function(data, var_names, condition_var=NULL, operator = "equal
 
   # Return results
   if (length(vars_with_na) > 0) {
-    stop(paste("Error: Variables with NA values:", paste(vars_with_na, collapse = ", ")))
+    stop(paste("ERROR: Variables with NA values:", paste(vars_with_na, collapse = ", ")))
 
   } else {
-    print("No NA values found in the specified variables.")
+    print("SUCCESS: No NA values found in the specified variables.")
   }
 }

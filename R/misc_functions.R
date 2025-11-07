@@ -20,10 +20,10 @@ var_exists <- function(data, vars) {
 
   # If there are any missing variables, stop and report them
   if (length(missing_vars) > 0) {
-    stop(paste("Error, Variable(s)", paste(missing_vars, collapse = ", "),
+    stop(paste("ERROR, Variable(s)", paste(missing_vars, collapse = ", "),
                "is (are) missing in dataset:", data_name))
   } else {
-    print(paste("Success: All specified variables are present in dataset:", data_name))
+    print(paste("SUCCESS: All specified variables are present in dataset:", data_name))
   }
 }
 
@@ -210,14 +210,14 @@ date_test_complex <- function(data, pm1, pj1, pm2, pj2, varm1, varj1, varm2 = NU
 
   # After all checks, report any failing caseids
   if (length(failing_cases_list) > 0) {
-    error_message <- "The following cases failed the checks:\n"
+    error_message <- "ERROR: The following cases failed the checks:\n"
     for (condition in names(failing_cases_list)) {
       error_message <- paste0(error_message, condition, ": ",
                               paste(unique(failing_cases_list[[condition]]), collapse = ", "), "\n")
     }
     stop(error_message)
   } else {
-    print("All checks passed successfully.")
+    print("SUCCESS:: All checks passed successfully.")
   }
 }
 
