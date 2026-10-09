@@ -2,3 +2,5 @@
 inst/doc
 docs
 nepstest/
+.Rhistory
+.RData
