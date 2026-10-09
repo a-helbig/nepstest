@@ -80,6 +80,27 @@ test_that("ef_test: duration variable of 0 or NA tolerates a value in Test 2", {
   expect_error(suppressMessages(ef_test(d, "aliz", !alintrop %in% 2 & h_panel == 1)))
 })
 
+test_that("ef_test: use_duration = FALSE ignores duration variables", {
+  d <- ef_data
+  d$aliz[4] <- 1
+  d$alizduration <- c(5, 4, NA, 0, NA, NA)
+  expect_error(suppressMessages(ef_test(d, "aliz", !alintrop %in% 2 & h_panel == 1, use_duration = FALSE)))
+  d$aliz[4] <- NA # without the value the strict test passes again
+  expect_no_error(suppressMessages(ef_test(d, "aliz", !alintrop %in% 2 & h_panel == 1, use_duration = FALSE)))
+  expect_error(ef_test(d, "aliz", h_panel == 1, use_duration = "no"), "use_duration")
+  expect_error(ef_test(d, "aliz", h_panel == 1, use_duration = NA), "use_duration")
+})
+
+test_that("ef_test: autoif-filled end date passes only with the duration rule", {
+  # PV: autoif (aliz = 1) alenddat = intm/intj, but alenddat has --ef: if (h_panel = 0) / if (aliz = 2)
+  d <- ef_data
+  d$alendm <- c(10, 5, NA, 3, 4, 7)                 # row 1: panel case with aliz = 1, filled by autoif
+  d$scr_alenddatduration <- c(0, 12, NA, 9, 8, 7)   # not shown in row 1
+  d$scr_alendmduration <- d$scr_alenddatduration
+  expect_no_error(suppressMessages(ef_test(d, "alendm", !alintrop %in% 2 & (h_panel %in% 0 | aliz %in% 2))))
+  expect_error(suppressMessages(ef_test(d, "alendm", !alintrop %in% 2 & (h_panel %in% 0 | aliz %in% 2), use_duration = FALSE)))
+})
+
 test_that("ef_test: empty strings count as NA by default", {
   d <- ef_data
   d$alcomment <- c("text", "", "", "", "", "")

@@ -28,8 +28,11 @@
 #' The ef-tag of an enclosing block (e.g. "Beginn Block 2") applies to all items in the block. Either add it to `condition`
 #' with `&`, or filter `data` to the block condition beforehand, as you would with the other test functions.
 #'
-#' Like in [af_test_complex()], a value in Test 2 is tolerated if a corresponding duration variable (`<var>duration`,
-#' `scr_<var>duration` or `src_<var>duration`) exists and is 0 or NA, because this means the item was not shown.
+#' With `use_duration = TRUE` (default), a value in Test 2 is tolerated if a corresponding duration variable
+#' (`<var>duration`, `scr_<var>duration` or `src_<var>duration`) exists and is 0 or NA, because this means the item was
+#' not shown, like in [af_test_complex()]. This matters for items that are filled by an autoif without being asked,
+#' e.g. an end date that is set to the interview date if the episode is ongoing. Set `use_duration = FALSE` for a strict
+#' Test 2 that ignores duration variables.
 #'
 #' @param data A neps field-data dataframe.
 #' @param test_var A string with the name of the item that carries the ef-tag. Can also be a character vector of several
@@ -38,6 +41,9 @@
 #'   A single string with the expression is accepted as well, e.g. `"h_panel == 1"`.
 #' @param check Which direction to test: `"both"` (default), `"asked"` (only Test 1) or `"not_asked"` (only Test 2).
 #'   `"not_asked"` can be useful if many interviews were broken off and Test 1 is therefore not informative.
+#' @param use_duration Logical, if TRUE (default) Test 2 tolerates a value when the corresponding duration variable is 0 or
+#'   NA. If FALSE, Test 2 fails for every value where the condition is not met. Has no effect for items without a duration
+#'   variable.
 #' @param empty_as_na Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE.
 #' @param print_filter_vars Optional character vector. Additional variable names to be included and prioritized in the
 #'   printed output when errors are detected. Variables used in `condition` are always printed next to `test_var`.
@@ -60,13 +66,19 @@
 #'
 #' # only check for overfiltering
 #' ef_test(T_27AL, "alge", alme %in% 1, check = "not_asked")
+#'
+#' # strict Test 2 without the duration rule
+#' ef_test(T_27AL, "algb", almb %in% 1, use_duration = FALSE)
 #' }
 #'
 #' @export ef_test
 ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_asked"),
-                    empty_as_na = TRUE, print_filter_vars = NULL) {
+                    use_duration = TRUE, empty_as_na = TRUE, print_filter_vars = NULL) {
   data_name <- deparse(substitute(data))
   check <- match.arg(check)
+  if (!is.logical(use_duration) || length(use_duration) != 1 || is.na(use_duration)) {
+    stop("ERROR: use_duration must be TRUE or FALSE.")
+  }
 
   # Capture the condition as an expression. Accept an unquoted expression, a string, or a variable holding a string.
   cond_expr <- substitute(condition)
@@ -142,7 +154,7 @@ ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_a
     ### Test 2: not asked where the condition does not hold
     if (check %in% c("both", "not_asked")) {
       fail2 <- !cond & !is.na(values)
-      duration_var <- find_duration_var(var, names(data))
+      duration_var <- if (use_duration) find_duration_var(var, names(data)) else NULL
       if (!is.null(duration_var)) {
         duration <- data[[duration_var]]
         fail2 <- fail2 & !is.na(duration) & duration != 0

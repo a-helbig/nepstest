@@ -9,6 +9,7 @@ ef_test(
   test_var,
   condition,
   check = c("both", "asked", "not_asked"),
+  use_duration = TRUE,
   empty_as_na = TRUE,
   print_filter_vars = NULL
 )
@@ -24,6 +25,10 @@ A single string with the expression is accepted as well, e.g. \code{"h_panel == 
 
 \item{check}{Which direction to test: \code{"both"} (default), \code{"asked"} (only Test 1) or \code{"not_asked"} (only Test 2).
 \code{"not_asked"} can be useful if many interviews were broken off and Test 1 is therefore not informative.}
+
+\item{use_duration}{Logical, if TRUE (default) Test 2 tolerates a value when the corresponding duration variable is 0 or
+NA. If FALSE, Test 2 fails for every value where the condition is not met. Has no effect for items without a duration
+variable.}
 
 \item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE.}
 
@@ -62,8 +67,11 @@ the condition is NA are treated as "condition not met", and the function prints 
 The ef-tag of an enclosing block (e.g. "Beginn Block 2") applies to all items in the block. Either add it to \code{condition}
 with \code{&}, or filter \code{data} to the block condition beforehand, as you would with the other test functions.
 
-Like in \code{\link[=af_test_complex]{af_test_complex()}}, a value in Test 2 is tolerated if a corresponding duration variable (\verb{<var>duration},
-\verb{scr_<var>duration} or \verb{src_<var>duration}) exists and is 0 or NA, because this means the item was not shown.
+With \code{use_duration = TRUE} (default), a value in Test 2 is tolerated if a corresponding duration variable
+(\verb{<var>duration}, \verb{scr_<var>duration} or \verb{src_<var>duration}) exists and is 0 or NA, because this means the item was
+not shown, like in \code{\link[=af_test_complex]{af_test_complex()}}. This matters for items that are filled by an autoif without being asked,
+e.g. an end date that is set to the interview date if the episode is ongoing. Set \code{use_duration = FALSE} for a strict
+Test 2 that ignores duration variables.
 }
 \examples{
 \dontrun{
@@ -81,6 +89,9 @@ ef_test(T_27AL, c("alendm", "alendj"), !alintrop \%in\% 2 & (h_panel \%in\% 0 | 
 
 # only check for overfiltering
 ef_test(T_27AL, "alge", alme \%in\% 1, check = "not_asked")
+
+# strict Test 2 without the duration rule
+ef_test(T_27AL, "algb", almb \%in\% 1, use_duration = FALSE)
 }
 
 }
