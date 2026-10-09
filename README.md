@@ -17,6 +17,10 @@ Tests complex af-tag filters
 Tests for NA equality between var1 and var2
 
 
+- `ef_test()`
+Tests ef-tags (entry filters)
+
+
 - `date_test()`
 Compare the values of two date items
 
