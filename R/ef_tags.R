@@ -11,7 +11,7 @@
 #' * Test 2 (not asked): `test_var` is NA where `condition` is FALSE. Fails reveal overfiltering, i.e. the item was asked
 #'   although it should not have been.
 #'
-#' Values like -97 or -98 count as answered, only NA counts as not asked.
+#' Values like -97 or -98 count as answered, only NA (and empty strings "" in character variables) count as not asked.
 #'
 #' @details
 #' `condition` is an R expression that is evaluated inside `data`, so it can combine several variables freely. To translate
@@ -44,7 +44,6 @@
 #' @param use_duration Logical, if TRUE (default) Test 2 tolerates a value when the corresponding duration variable is 0 or
 #'   NA. If FALSE, Test 2 fails for every value where the condition is not met. Has no effect for items without a duration
 #'   variable.
-#' @param empty_as_na Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE.
 #' @param print_filter_vars Optional character vector. Additional variable names to be included and prioritized in the
 #'   printed output when errors are detected. Variables used in `condition` are always printed next to `test_var`.
 #'
@@ -73,7 +72,7 @@
 #'
 #' @export ef_test
 ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_asked"),
-                    use_duration = TRUE, empty_as_na = TRUE, print_filter_vars = NULL) {
+                    use_duration = TRUE, print_filter_vars = NULL) {
   data_name <- deparse(substitute(data))
   check <- match.arg(check)
   if (!is.logical(use_duration) || length(use_duration) != 1 || is.na(use_duration)) {
@@ -135,7 +134,7 @@ ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_a
   any_fail <- FALSE
 
   for (var in test_var) {
-    values <- replace_empty_with_na_ef(data[[var]], empty_as_na)
+    values <- replace_empty_with_na_ef(data[[var]])
 
     ### Test 1: asked where the condition holds
     if (check %in% c("both", "asked")) {
@@ -178,9 +177,9 @@ ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_a
   invisible(TRUE)
 }
 
-# Helper to replace "" with NA in character vectors if requested
-replace_empty_with_na_ef <- function(x, empty_as_na) {
-  if (empty_as_na && is.character(x)) {
+# Helper to replace "" with NA in character vectors
+replace_empty_with_na_ef <- function(x) {
+  if (is.character(x)) {
     x[x == ""] <- NA
   }
   x

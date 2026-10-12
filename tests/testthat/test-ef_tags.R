@@ -101,11 +101,12 @@ test_that("ef_test: autoif-filled end date passes only with the duration rule", 
   expect_error(suppressMessages(ef_test(d, "alendm", !alintrop %in% 2 & (h_panel %in% 0 | aliz %in% 2), use_duration = FALSE)))
 })
 
-test_that("ef_test: empty strings count as NA by default", {
+test_that("ef_test: empty strings count as NA", {
   d <- ef_data
   d$alcomment <- c("text", "", "", "", "", "")
   expect_no_error(suppressMessages(ef_test(d, "alcomment", caseid == 1)))
-  expect_error(suppressMessages(ef_test(d, "alcomment", caseid == 1, empty_as_na = FALSE)))
+  d$alcomment[1] <- ""
+  expect_error(suppressMessages(ef_test(d, "alcomment", caseid == 1))) # asked but empty
 })
 
 test_that("ef_test: input checks", {

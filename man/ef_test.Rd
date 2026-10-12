@@ -10,7 +10,6 @@ ef_test(
   condition,
   check = c("both", "asked", "not_asked"),
   use_duration = TRUE,
-  empty_as_na = TRUE,
   print_filter_vars = NULL
 )
 }
@@ -30,8 +29,6 @@ A single string with the expression is accepted as well, e.g. \code{"h_panel == 
 NA. If FALSE, Test 2 fails for every value where the condition is not met. Has no effect for items without a duration
 variable.}
 
-\item{empty_as_na}{Logical, if TRUE empty strings ("") in character variables will be treated as NA. Default is TRUE.}
-
 \item{print_filter_vars}{Optional character vector. Additional variable names to be included and prioritized in the
 printed output when errors are detected. Variables used in \code{condition} are always printed next to \code{test_var}.}
 }
@@ -49,7 +46,7 @@ although it should have been (or the interview was broken off before the item).
 although it should not have been.
 }
 
-Values like -97 or -98 count as answered, only NA counts as not asked.
+Values like -97 or -98 count as answered, only NA (and empty strings "" in character variables) count as not asked.
 }
 \details{
 \code{condition} is an R expression that is evaluated inside \code{data}, so it can combine several variables freely. To translate
