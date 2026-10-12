@@ -31,14 +31,18 @@
 #' With `use_duration = TRUE` (default), a value in Test 2 is tolerated if a corresponding duration variable
 #' (`<var>duration`, `scr_<var>duration` or `src_<var>duration`) exists and is 0 or NA, because this means the item was
 #' not shown, like in [af_test_complex()]. This matters for items that are filled by an autoif without being asked,
-#' e.g. an end date that is set to the interview date if the episode is ongoing. Set `use_duration = FALSE` for a strict
-#' Test 2 that ignores duration variables.
+#' e.g. an end date that is set to the interview date if the episode is ongoing. Month and year variables of a date
+#' (e.g. `alendm`, `alendj`) have no duration variable of their own, so the duration variable of the date is used
+#' instead (e.g. `scr_alenddatduration`). The output names the duration variable that was used. Set
+#' `use_duration = FALSE` for a strict Test 2 that ignores duration variables.
 #'
 #' @param data A neps field-data dataframe.
 #' @param test_var A string with the name of the item that carries the ef-tag. Can also be a character vector of several
 #'   items that share the same entry condition.
 #' @param condition The entry condition as an unquoted R expression, e.g. `h_panel == 1 & !alintrop %in% 2`.
-#'   A single string with the expression is accepted as well, e.g. `"h_panel == 1"`.
+#'   Use `TRUE` for items that are always asked. Objects from your script (e.g. a vector of codes) can be used too.
+#'   A single string with the expression is accepted as well, e.g. `"h_panel == 1"`, and so is a variable that holds
+#'   a string or a quoted expression, e.g. `cond <- quote(h_panel == 1)`, which is handy if several items share a condition.
 #' @param check Which direction to test: `"both"` (default), `"asked"` (only Test 1) or `"not_asked"` (only Test 2).
 #'   `"not_asked"` can be useful if many interviews were broken off and Test 1 is therefore not informative.
 #' @param use_duration Logical, if TRUE (default) Test 2 tolerates a value when the corresponding duration variable is 0 or
@@ -66,6 +70,13 @@
 #' # only check for overfiltering
 #' ef_test(T_27AL, "alge", alme %in% 1, check = "not_asked")
 #'
+#' # item that is always asked (--ef: alle)
+#' ef_test(T_27AL, "alnr", TRUE)
+#'
+#' # codes defined in the script can be used in the condition
+#' panel_modes <- c(2, 3)
+#' ef_test(T_27AL, "alintro12", almod1 %in% panel_modes)
+#'
 #' # strict Test 2 without the duration rule
 #' ef_test(T_27AL, "algb", almb %in% 1, use_duration = FALSE)
 #' }
@@ -83,7 +94,7 @@ ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_a
   cond_expr <- substitute(condition)
   if (is.symbol(cond_expr) && !as.character(cond_expr) %in% names(data)) {
     cond_value <- tryCatch(eval(cond_expr, parent.frame()), error = function(e) NULL)
-    if (is.character(cond_value)) cond_expr <- cond_value
+    if (is.character(cond_value) || is.call(cond_value)) cond_expr <- cond_value
   }
   if (is.character(cond_expr)) {
     if (length(cond_expr) != 1) {
@@ -101,8 +112,13 @@ ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_a
   if (length(missing_test_vars) > 0) {
     stop(paste("ERROR: test_var", paste(missing_test_vars, collapse = ", "), "not found in the dataframe", data_name))
   }
-  cond_vars <- all.vars(cond_expr)
-  missing_cond_vars <- cond_vars[!cond_vars %in% names(data)]
+  # Names in the condition are columns of data. Names that are not columns may refer to objects in the calling
+  # environment (e.g. a vector of codes defined in the script); anything else is a typo and stops the function.
+  caller_env <- parent.frame()
+  all_cond_names <- all.vars(cond_expr)
+  cond_vars <- all_cond_names[all_cond_names %in% names(data)]
+  missing_cond_vars <- all_cond_names[!all_cond_names %in% names(data) &
+                                        !vapply(all_cond_names, exists, logical(1), envir = caller_env)]
   if (length(missing_cond_vars) > 0) {
     stop(paste("ERROR: Variable(s) used in condition not found in the dataframe", data_name, ":",
                paste(missing_cond_vars, collapse = ", ")))
@@ -112,7 +128,10 @@ ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_a
   }
 
   # Evaluate the condition inside the data
-  cond <- eval(cond_expr, as.list(data), parent.frame())
+  cond <- eval(cond_expr, as.list(data), caller_env)
+  if (is.logical(cond) && length(cond) == 1) {
+    cond <- rep(cond, nrow(data)) # e.g. TRUE for items that are always asked
+  }
   if (!is.logical(cond) || length(cond) != nrow(data)) {
     stop("ERROR: condition must evaluate to a logical vector with one value per row of the dataframe.")
   }
@@ -157,6 +176,7 @@ ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_a
       if (!is.null(duration_var)) {
         duration <- data[[duration_var]]
         fail2 <- fail2 & !is.na(duration) & duration != 0
+        message("Test 2 (not asked): values are tolerated where '", duration_var, "' is 0 or NA (item not shown).")
       }
       if (any(fail2)) {
         any_fail <- TRUE
@@ -185,9 +205,15 @@ replace_empty_with_na_ef <- function(x) {
   x
 }
 
-# Find a duration variable that belongs to var, preferring "<var>duration" over the scr_/src_ variants
+# Find a duration variable that belongs to var, preferring "<var>duration" over the scr_/src_ variants.
+# Month and year variables of a date (e.g. alendm, alendj) have no duration variable of their own, so the duration
+# variable of the date (e.g. scr_alenddatduration) is used for them.
 find_duration_var <- function(var, var_names) {
-  candidates <- c(paste0(var, "duration"), paste0("scr_", var, "duration"), paste0("src_", var, "duration"))
+  duration_candidates <- function(v) c(paste0(v, "duration"), paste0("scr_", v, "duration"), paste0("src_", v, "duration"))
+  candidates <- duration_candidates(var)
+  if (grepl("[mjy]$", var)) {
+    candidates <- c(candidates, duration_candidates(paste0(sub("[mjy]$", "", var), "dat")))
+  }
   found <- candidates[candidates %in% var_names]
   if (length(found) == 0) NULL else found[1]
 }

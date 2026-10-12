@@ -54,6 +54,10 @@ test_that("ef_test: condition can be given as a string", {
   expect_no_error(suppressMessages(ef_test(ef_data, "algb", "almb %in% 1")))
   cond <- "almb %in% 1"
   expect_no_error(suppressMessages(ef_test(ef_data, "algb", cond)))
+  cond_q <- quote(almb %in% 1)
+  expect_no_error(suppressMessages(ef_test(ef_data, "algb", cond_q)))
+  cond_bad <- quote(almb %in% 2)
+  expect_error(suppressMessages(ef_test(ef_data, "algb", cond_bad)))
 })
 
 test_that("ef_test: several test_vars with the same condition", {
@@ -124,4 +128,55 @@ test_that("ef_test: works with haven labelled data", {
   d$aliz <- haven::labelled(d$aliz, c(ja = 1, nein = 2))
   expect_no_error(suppressMessages(ef_test(d, "aliz", !alintrop %in% 2 & h_panel == 1)))
   expect_no_error(suppressMessages(ef_test(d, "aliz", !alintrop %in% 2 & h_panel %in% 1)))
+})
+
+test_that("ef_test: month and year variables use the duration variable of the date", {
+  d <- ef_data
+  d$alendm <- c(10, 5, NA, 3, 4, 7)                 # row 1: filled by autoif, not shown
+  d$alendj <- c(2024, 2024, NA, 2023, 2024, 2024)
+  d$scr_alenddatduration <- c(0, 12, NA, 9, 8, 7)   # only the date has a duration variable
+  cond <- quote(!alintrop %in% 2 & (h_panel %in% 0 | aliz %in% 2))
+  expect_no_error(suppressMessages(ef_test(d, c("alendm", "alendj"), cond)))
+  expect_message(ef_test(d, "alendm", cond), "scr_alenddatduration")
+  expect_error(suppressMessages(ef_test(d, c("alendm", "alendj"), cond, use_duration = FALSE)))
+  d$scr_alenddatduration[1] <- 5                    # shown although filtered out -> must fail
+  expect_error(suppressMessages(ef_test(d, "alendm", cond)))
+})
+
+test_that("find_duration_var: prefers the own duration variable and falls back to the date", {
+  expect_equal(find_duration_var("alge", c("alge", "scr_algeduration")), "scr_algeduration")
+  expect_equal(find_duration_var("alge", c("algeduration", "scr_algeduration")), "algeduration")
+  expect_equal(find_duration_var("alendm", c("scr_alenddatduration")), "scr_alenddatduration")
+  expect_equal(find_duration_var("alendj", c("scr_alendjduration", "scr_alenddatduration")), "scr_alendjduration")
+  expect_null(find_duration_var("almb", c("scr_alenddatduration")))
+  expect_null(find_duration_var("alme", c("scr_aldatduration")))  # no m/j/y suffix -> no fallback
+})
+
+test_that("ef_test: objects from the calling environment can be used in the condition", {
+  modes <- c(1, 2, 4)
+  expect_no_error(suppressMessages(ef_test(ef_data, "almb", !alintrop %in% 2 & almod1 %in% modes)))
+  wrong_modes <- c(3)
+  expect_error(suppressMessages(ef_test(ef_data, "almb", !alintrop %in% 2 & almod1 %in% wrong_modes)))
+  expect_error(ef_test(ef_data, "almb", almod1 %in% not_defined_anywhere), "not found")
+  f <- function(d) { my_modes <- c(1, 2, 4); ef_test(d, "almb", !alintrop %in% 2 & almod1 %in% my_modes) }
+  expect_no_error(suppressMessages(f(ef_data))) # also works inside a function
+})
+
+test_that("ef_test: TRUE as condition for items that are always asked", {
+  expect_no_error(suppressMessages(ef_test(ef_data, "almod1", TRUE)))
+  d <- ef_data
+  d$almod1[2] <- NA
+  expect_error(suppressMessages(ef_test(d, "almod1", TRUE)))
+})
+
+test_that("ef_test: works with tibbles, without caseid, with 0 rows and in a pipe", {
+  skip_if_not_installed("tibble")
+  expect_no_error(suppressMessages(ef_test(tibble::as_tibble(ef_data), "algb", almb %in% 1)))
+  expect_no_error(suppressMessages(ef_test(ef_data[, -1], "algb", almb %in% 1)))
+  d <- ef_data
+  d$algb[1] <- NA
+  expect_error(suppressMessages(ef_test(tibble::as_tibble(d), "algb", almb %in% 1)))
+  expect_error(suppressMessages(ef_test(d[, -1], "algb", almb %in% 1)))
+  expect_message(ef_test(ef_data[0, ], "algb", almb %in% 1), "never met")
+  expect_no_error(suppressMessages(ef_data |> ef_test("algb", almb %in% 1)))
 })

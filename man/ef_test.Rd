@@ -20,7 +20,9 @@ ef_test(
 items that share the same entry condition.}
 
 \item{condition}{The entry condition as an unquoted R expression, e.g. \code{h_panel == 1 & !alintrop \%in\% 2}.
-A single string with the expression is accepted as well, e.g. \code{"h_panel == 1"}.}
+Use \code{TRUE} for items that are always asked. Objects from your script (e.g. a vector of codes) can be used too.
+A single string with the expression is accepted as well, e.g. \code{"h_panel == 1"}, and so is a variable that holds
+a string or a quoted expression, e.g. \code{cond <- quote(h_panel == 1)}, which is handy if several items share a condition.}
 
 \item{check}{Which direction to test: \code{"both"} (default), \code{"asked"} (only Test 1) or \code{"not_asked"} (only Test 2).
 \code{"not_asked"} can be useful if many interviews were broken off and Test 1 is therefore not informative.}
@@ -67,8 +69,10 @@ with \code{&}, or filter \code{data} to the block condition beforehand, as you w
 With \code{use_duration = TRUE} (default), a value in Test 2 is tolerated if a corresponding duration variable
 (\verb{<var>duration}, \verb{scr_<var>duration} or \verb{src_<var>duration}) exists and is 0 or NA, because this means the item was
 not shown, like in \code{\link[=af_test_complex]{af_test_complex()}}. This matters for items that are filled by an autoif without being asked,
-e.g. an end date that is set to the interview date if the episode is ongoing. Set \code{use_duration = FALSE} for a strict
-Test 2 that ignores duration variables.
+e.g. an end date that is set to the interview date if the episode is ongoing. Month and year variables of a date
+(e.g. \code{alendm}, \code{alendj}) have no duration variable of their own, so the duration variable of the date is used
+instead (e.g. \code{scr_alenddatduration}). The output names the duration variable that was used. Set
+\code{use_duration = FALSE} for a strict Test 2 that ignores duration variables.
 }
 \examples{
 \dontrun{
@@ -86,6 +90,13 @@ ef_test(T_27AL, c("alendm", "alendj"), !alintrop \%in\% 2 & (h_panel \%in\% 0 | 
 
 # only check for overfiltering
 ef_test(T_27AL, "alge", alme \%in\% 1, check = "not_asked")
+
+# item that is always asked (--ef: alle)
+ef_test(T_27AL, "alnr", TRUE)
+
+# codes defined in the script can be used in the condition
+panel_modes <- c(2, 3)
+ef_test(T_27AL, "alintro12", almod1 \%in\% panel_modes)
 
 # strict Test 2 without the duration rule
 ef_test(T_27AL, "algb", almb \%in\% 1, use_duration = FALSE)
