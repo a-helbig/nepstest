@@ -6,7 +6,7 @@
 \alias{nepstest-package}
 \title{nepstest: What the Package Does (One Line, Title Case)}
 \description{
-Functions for testing NEPS field-data, in particular af-tag, ac-tag, ra-tag.
+Functions for testing NEPS field-data, in particular af-tag, ac-tag, ef-tag, ra-tag and variable labels.
 }
 \author{
 \strong{Maintainer}: Alexander Helbig \email{alexander.helbig@wzb.eu} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})

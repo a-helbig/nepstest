@@ -4,14 +4,17 @@ Version: 0.0.9
 Authors@R: 
     person("Alexander", "Helbig", , "alexander.helbig@wzb.eu", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: Functions for testing NEPS field-data, in particular af-tag, ac-tag, ra-tag.
+Description: Functions for testing NEPS field-data, in particular af-tag, ac-tag, ef-tag, ra-tag and variable labels.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports:
-    utils
+    stats,
+    utils,
+    xml2
 Suggests: 
+    haven,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

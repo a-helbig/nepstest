@@ -21,6 +21,18 @@ Tests for NA equality between var1 and var2
 Tests ef-tags (entry filters)
 
 
+- `label_test()`
+Tests the variable labels in the data against the va- and vb-tags of the PV
+
+
+- `read_pv()`
+Reads a PV (docx) and splits every item into its tags
+
+
+- `pv_var_labels()`
+Expected variable labels from a PV, one row per variable
+
+
 - `date_test()`
 Compare the values of two date items
 
