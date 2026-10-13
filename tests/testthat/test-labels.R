@@ -1,6 +1,7 @@
 # Artificial PV (tests/testthat/fixtures/pv_test.docx) modelled on the employment module (26ET). It contains a timestamp,
 # a helper variable, a list separated by commas, two dates, a multiple choice item with "verweigert"/"weiß nicht"
-# variables, an [MF] item, a date without a list in the vb-tag and an item with a label longer than 80 characters.
+# variables, an [MF] item, a date without a list in the vb-tag, an item with a label longer than 80 characters and
+# preloads that refer to other items by variable name.
 pv_path <- test_path("fixtures", "pv_test.docx")
 
 long_vb <- paste("Eine Bezeichnung, die so lang ist, dass sie in Stata bei achtzig Zeichen abgeschnitten werden muss,",
@@ -37,7 +38,7 @@ make_labelled_data <- function(labels) {
 test_that("read_pv: reads all items and splits the tags", {
   pv <- read_pv(pv_path)
   expect_true(all(c("pv", "item", "va", "vb", "we", "ef", "text") %in% names(pv)))
-  expect_equal(sum(!is.na(pv$va)), 9)
+  expect_equal(sum(!is.na(pv$va)), 16)
   expect_equal(pv$va[pv$item %in% "26100Z"], "[ZS] zet1")
   expect_equal(pv$ef[pv$item %in% "26181b"], "if (etent1 = 1)")
   ts_we <- pv$we[pv$item %in% "26214"]
@@ -48,7 +49,7 @@ test_that("read_pv: reads all items and splits the tags", {
 
 test_that("read_pv: several PVs are combined, missing files stop", {
   pv <- read_pv(c(pv_path, pv_path))
-  expect_equal(sum(!is.na(pv$va)), 18)
+  expect_equal(sum(!is.na(pv$va)), 32)
   expect_error(read_pv("does_not_exist.docx"), "not found")
 })
 
@@ -137,4 +138,22 @@ test_that("label_test: accepts the result of read_pv() and pv_var_labels()", {
   expect_no_error(suppressMessages(label_test(d, pv)))
   expect_no_error(suppressMessages(label_test(d, pv_var_labels(pv))))
   expect_error(label_test(d, 42), "pv must be")
+})
+
+test_that("label_test: item numbers in the data that match the variable names in the PV are fine", {
+  labels <- c(correct_labels["zet1"],
+              etnrPRE = "Preload ET-Episodennummer dieser Episode (26110)",
+              etstmPRE = "Preload Startdatum Monat ET-Episode (26122)",
+              etstjPRE = "Preload Startdatum Jahr ET-Episode (etstdat (etstm / etstj))")
+  d <- make_labelled_data(labels)
+  res <- suppressMessages(label_test(d, pv_path))
+  expect_equal(res$status[res$var %in% c("etnrPRE", "etstmPRE")], c("item_ref", "item_ref"))
+  expect_equal(res$status[res$var == "etstjPRE"], "ok")
+  expect_message(label_test(d, pv_path), "2 label\\(s\\) refer to items by item number")
+})
+
+test_that("label_test: an item number that belongs to another variable is an error", {
+  labels <- c(correct_labels["zet1"], etnrPRE = "Preload ET-Episodennummer dieser Episode (26122)")
+  d <- make_labelled_data(labels)
+  expect_error(suppressMessages(label_test(d, pv_path)), "label_test failed")
 })

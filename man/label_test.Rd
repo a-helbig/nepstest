@@ -30,7 +30,7 @@ prints the results, which is handy to get the result table back.}
 }
 \value{
 Invisibly a data frame with one row per checked variable and the columns \code{var}, \code{pv_var}, \code{data_label},
-\code{pv_label}, \code{status} ("ok", "format", "truncated", "mismatch", "missing_label", "unclear"), \code{item} and \code{note}.
+\code{pv_label}, \code{status} ("ok", "format", "truncated", "item_ref", "mismatch", "missing_label", "unclear"), \code{item} and \code{note}.
 If labels differ and \code{stop_on_fail = TRUE}, the function stops with an error after printing them.
 }
 \description{
@@ -46,6 +46,9 @@ matched to the PV variable without the suffix. The label in the data (attribute 
 \item different only in brackets, slashes, hyphens, quotes, colons, commas or upper/lower case: fine, counted as a formatting
 difference. Use \code{show_format = TRUE} to list them.
 \item the data label is cut off at Stata's limit of 80 characters but otherwise identical: fine.
+\item the data label refers to other items by their item number where the PV uses the variable name, e.g. a preload with
+"(23110)" in the data and "(bvnr)" in the PV: fine, if the item number belongs to exactly that variable in the PV.
+Counted as an item reference and listed with \code{show_format = TRUE}.
 \item anything else, or no label at all in the data: ERROR. The function prints the variable with both labels and stops at
 the end.
 }

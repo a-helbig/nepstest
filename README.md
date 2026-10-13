@@ -22,7 +22,11 @@ Tests ef-tags (entry filters)
 
 
 - `label_test()`
-Tests the variable labels in the data against the va- and vb-tags of the PV
+Tests the variable labels in the data against the va- and vb-tags of the PV. How the test works is explained in `vignette("label_test", package = "nepstest")`
+
+
+- `value_label_test()`
+Tests the value labels (codes and their labels) in the data against the we-tags of the PV, see the same vignette
 
 
 - `read_pv()`
@@ -31,6 +35,10 @@ Reads a PV (docx) and splits every item into its tags
 
 - `pv_var_labels()`
 Expected variable labels from a PV, one row per variable
+
+
+- `pv_value_labels()`
+Expected codes and value labels from a PV, one row per variable and code
 
 
 - `date_test()`

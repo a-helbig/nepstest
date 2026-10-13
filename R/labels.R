@@ -76,6 +76,9 @@ pv_var_labels <- function(pv) {
 #' * different only in brackets, slashes, hyphens, quotes, colons, commas or upper/lower case: fine, counted as a formatting
 #'   difference. Use `show_format = TRUE` to list them.
 #' * the data label is cut off at Stata's limit of 80 characters but otherwise identical: fine.
+#' * the data label refers to other items by their item number where the PV uses the variable name, e.g. a preload with
+#'   "(23110)" in the data and "(bvnr)" in the PV: fine, if the item number belongs to exactly that variable in the PV.
+#'   Counted as an item reference and listed with `show_format = TRUE`.
 #' * anything else, or no label at all in the data: ERROR. The function prints the variable with both labels and stops at
 #'   the end.
 #'
@@ -93,7 +96,7 @@ pv_var_labels <- function(pv) {
 #'   prints the results, which is handy to get the result table back.
 #'
 #' @return Invisibly a data frame with one row per checked variable and the columns `var`, `pv_var`, `data_label`,
-#'   `pv_label`, `status` ("ok", "format", "truncated", "mismatch", "missing_label", "unclear"), `item` and `note`.
+#'   `pv_label`, `status` ("ok", "format", "truncated", "item_ref", "mismatch", "missing_label", "unclear"), `item` and `note`.
 #'   If labels differ and `stop_on_fail = TRUE`, the function stops with an error after printing them.
 #'
 #' @examples
@@ -155,6 +158,16 @@ label_test <- function(data, pv, ignore = c("duration$", "_e$"), show_format = F
   )
   result$status <- compare_labels(result$data_label, result$pv_label)
 
+  # Labels that refer to other items by item number (e.g. preloads): translate the item numbers into the variable
+  # names of the PV and compare again
+  item_lookup <- item_var_lookup(expected)
+  check_ref <- result$status == "mismatch"
+  if (any(check_ref) && length(item_lookup) > 0) {
+    translated <- replace_item_numbers(result$data_label[check_ref], item_lookup)
+    status_ref <- compare_labels(translated, result$pv_label[check_ref])
+    result$status[check_ref][status_ref %in% c("ok", "format", "truncated")] <- "item_ref"
+  }
+
   only_in_data <- data_vars[!matched]
   only_in_pv <- setdiff(expected$var, pv_var)
 
@@ -183,6 +196,11 @@ label_test <- function(data, pv, ignore = c("duration$", "_e$"), show_format = F
     message("NOTE: ", n_status("format"), " label(s) differ only in brackets, slashes, hyphens, punctuation or case.",
             if (!show_format) " Use show_format = TRUE to list them." else "")
     if (show_format) print_label_rows(result[result$status == "format", , drop = FALSE])
+  }
+  if (n_status("item_ref") > 0) {
+    message("NOTE: ", n_status("item_ref"), " label(s) refer to items by item number where the PV uses the variable name",
+            " (the numbers match the PV).", if (!show_format) " Use show_format = TRUE to list them." else "")
+    if (show_format) print_label_rows(result[result$status == "item_ref", , drop = FALSE])
   }
   if (n_status("truncated") > 0) {
     message("NOTE: ", n_status("truncated"), " label(s) are cut off at 80 characters in the data, but match otherwise: ",
@@ -229,6 +247,26 @@ as_pv <- function(pv) {
   if (is.character(pv)) return(read_pv(pv))
   if (is.data.frame(pv) && "va" %in% names(pv)) return(pv)
   stop("ERROR: pv must be the result of read_pv() or a path to a PV docx file.")
+}
+
+# Named vector item number -> va-tag (without markers) of all items in the PV, e.g. c("23110" = "bvnr")
+item_var_lookup <- function(expected) {
+  if (!all(c("item", "va") %in% names(expected))) return(character(0))
+  items <- unique(expected[!is.na(expected$item) & !is.na(expected$va), c("item", "va"), drop = FALSE])
+  items <- items[!duplicated(items$item) & !items$item %in% items$item[duplicated(items$item)], , drop = FALSE]
+  stats::setNames(vapply(items$va, clean_va, character(1), USE.NAMES = FALSE), items$item)
+}
+
+# Replace item numbers like 23110 or 23103P1 in labels by the variable names from the lookup
+replace_item_numbers <- function(labels, lookup) {
+  vapply(labels, function(l) {
+    if (is.na(l)) return(l)
+    tokens <- unique(regmatches(l, gregexpr("\\b[0-9]{5}[A-Za-z0-9]*\\b", l, perl = TRUE))[[1]])
+    for (t in tokens[tokens %in% names(lookup)]) {
+      l <- gsub(paste0("\\b", t, "\\b"), lookup[[t]], l, perl = TRUE)
+    }
+    l
+  }, character(1), USE.NAMES = FALSE)
 }
 
 # Collapse blanks
