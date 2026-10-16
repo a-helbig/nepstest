@@ -1,0 +1,265 @@
+# Testing variable and value labels
+
+Two functions check the labels of a field data delivery against the PV
+(Programmiervorlage):
+
+- [`label_test()`](https://a-helbig.github.io/nepstest/reference/label_test.md)
+  checks the **variable labels** (vb-tag),
+- [`value_label_test()`](https://a-helbig.github.io/nepstest/reference/value_label_test.md)
+  checks the **value labels**, i.e. the codes and their labels (we-tag).
+
+One call checks all variables of a module. This vignette explains how
+the tests work, so that you can judge their output. The first part is
+about variable labels, the second about value labels.
+
+## Usage
+
+``` r
+
+library(nepstest)
+
+T_26ET  <- haven::read_dta("26ET.dta")
+pv_26ET <- read_pv("NEPS_B180_SC6_EP_26ET_V2_2_20250312.docx")
+
+label_test(T_26ET, pv_26ET)
+value_label_test(T_26ET, pv_26ET)
+```
+
+The data must be read with
+[`haven::read_dta()`](https://haven.tidyverse.org/reference/read_dta.html),
+so that every variable carries its label as the attribute `label`.
+Several PVs can be read at once with
+`read_pv(c("PV_26ET.docx", "PV_27AL.docx"))`.
+
+## Variable labels
+
+[`label_test()`](https://a-helbig.github.io/nepstest/reference/label_test.md)
+runs in four steps.
+
+### Step 1: Reading the PV
+
+[`read_pv()`](https://a-helbig.github.io/nepstest/reference/read_pv.md)
+reads all tables of the docx file. Every table row that contains at
+least one tag (`--va:`, `--vb:`, …) becomes one item. The text of a tag
+runs from its tag line to the next tag line or to `--end--`. The first
+column of the table is kept as the item number (e.g. `26122` or
+`23103P1`).
+
+The result has one column per tag, so it can also be used for other
+purposes, e.g. to look up an ef-tag:
+
+``` r
+
+pv_26ET[pv_26ET$item %in% "26181b", c("va", "ef")]
+```
+
+### Step 2: Expected label per variable
+
+The internal function
+[`pv_var_labels()`](https://a-helbig.github.io/nepstest/reference/pv_var_labels.md)
+derives from the va- and vb-tags which label each variable should have
+in the data. It is not exported, but you can call it with `nepstest:::`
+to see the expected labels:
+
+``` r
+
+labels_26ET <- nepstest:::pv_var_labels(pv_26ET)
+```
+
+Markers in front of the variable name (`[ZS]`, `[HILF]`, …) and `[MF]`
+at the start of the vb-tag are removed. Items with a single variable get
+the vb-tag as it is. Items whose va-tag lists several variables are
+split into one row per variable. The survey institute builds those
+labels as **text before the list + the part for this variable + text
+after the list**, and drops the brackets and slashes:
+
+| Item type | va-tag | vb-tag | Expected label (example) |
+|----|----|----|----|
+| Date | `etstdat (etstm / etstj)` | Startdatum (-monat/-jahr) Erwerbsepisode | `etstm`: Startdatum Monat Erwerbsepisode |
+| Date | `etentdat1 (etent1m / etent1j)` | Datum (Monat/Jahr) der Entfristung | `etent1j`: Datum Jahr der Entfristung |
+| Multiple choice | `etintro1a (etintro1a1 / ... )` | Interviewerangabe bei Widerspruch (Berufsangabe / …) | `etintro1a1`: Interviewerangabe bei Widerspruch Berufsangabe |
+| List with commas | `h_etzeit (h_etzeit1, h_etzeit2, ...)` | Zeitarbeit andauernder Erwerbsepisoden (h_etzeit1, h_etzeit2, …) | `h_etzeit1`: Zeitarbeit andauernder Erwerbsepisoden h_etzeit1 |
+
+Details:
+
+- The list is the first bracket in the vb-tag that contains slashes or
+  commas and has as many parts as the va-tag has variables. If there is
+  no such bracket, the first bracket with slashes or commas is used.
+- The parts are assigned to the variables in order. A leading hyphen is
+  removed and date parts are capitalized (`-monat` becomes `Monat`).
+- **More variables than parts:** multiple choice items often have extra
+  variables for “verweigert” and “weiß nicht” that are not in the
+  vb-tag, e.g. `ts2352 (ts23525 / ... / ts23529)` with only three parts
+  in the vb-tag. The first variables get the parts in order, the label
+  of the remaining ones is taken from their line in the we-tag
+  (`ts23528: verweigert` gives “Sondervergütung verweigert”). The output
+  mentions every item where this rule was used.
+- **No list at all:** if the va-tag has several variables but the vb-tag
+  has no bracket with slashes or commas (e.g. vb “Trennungsdatum”), no
+  label is derived. The variable gets the status “unclear” (see below)
+  and has to be checked by hand.
+
+### Step 3: Matching data and PV variables
+
+Every variable of the data is matched to a PV variable by name:
+
+- Same name: matched.
+- Loop variables with a suffix like `_1`, `_2` are matched to the PV
+  variable without the suffix.
+- Variables whose names match a pattern in `ignore` are skipped.
+  Default: duration variables (`duration$`) and variables ending in
+  `_e`.
+
+Variables that are only in the data or only in the PV are listed as a
+NOTE. They do not make the test fail, use `var_exists()` if a missing
+variable should be an error.
+
+### Step 4: Comparing the labels
+
+Each matched variable gets one status:
+
+| Status | Meaning | Test fails? |
+|----|----|----|
+| `ok` | Identical (apart from blanks). | no |
+| `format` | Differs only in brackets, slashes, hyphens, quotes, colons, commas or upper/lower case. | no |
+| `truncated` | The data label is cut off at Stata’s limit of 80 characters but otherwise identical. | no |
+| `item_ref` | The data label refers to other items by item number where the PV uses the variable name, e.g. a preload with “(23110)” in the data and “(bvnr)” in the PV. Only accepted if the item number belongs to exactly that variable in the PV. | no |
+| `unclear` | No expected label could be derived from the PV (see step 2). Listed with the reason and the data label. | no |
+| `mismatch` | Any other difference. Both labels are printed. | **yes** |
+| `missing_label` | The variable has no label in the data. | **yes** |
+
+If any variable has the status `mismatch` or `missing_label`, the
+function stops with an error at the end, like the other test functions
+of the package.
+
+### Reading the output
+
+A run with one wrong label looks like this:
+
+    Comparing the variable labels of 32 variable(s) in T23_Full with the PV.
+    ERROR - 1 variable label(s) differ from the PV:
+      bvmn     (item 23109)
+        data: Maßnahmeart Weiterbildung
+        PV:   Maßnahmeart
+    NOTE: 3 label(s) differ only in brackets, slashes, hyphens, punctuation or case. Use show_format = TRUE to list them.
+    NOTE: 7 label(s) refer to items by item number where the PV uses the variable name (the numbers match the PV). Use show_format = TRUE to list them.
+    NOTE: 1 variable(s) are in the data but not in the PV: caseid
+    Error: label_test failed. Please inspect the above labels.
+
+Useful arguments:
+
+- `show_format = TRUE` also prints the labels with the status `format`
+  and `item_ref`, to check them by eye.
+- `stop_on_fail = FALSE` prints the same output but does not stop. The
+  function then returns the full comparison table, which can be
+  filtered:
+
+``` r
+
+res <- label_test(T_26ET, pv_26ET, stop_on_fail = FALSE)
+res[res$status == "mismatch", ]
+attr(res, "only_in_pv")
+```
+
+- `show_unmatched = FALSE` hides the lists of variables that are only in
+  the data or only in the PV.
+
+## Value labels
+
+[`value_label_test()`](https://a-helbig.github.io/nepstest/reference/value_label_test.md)
+works like
+[`label_test()`](https://a-helbig.github.io/nepstest/reference/label_test.md):
+the PV is read with
+[`read_pv()`](https://a-helbig.github.io/nepstest/reference/read_pv.md),
+the expected codes are derived per variable, data and PV variables are
+matched by name (including loop suffixes and `ignore`), and then the
+codes are compared. In the data, the value labels of a variable are a
+named vector (attribute `labels`, as set by
+[`haven::read_dta()`](https://haven.tidyverse.org/reference/read_dta.html)):
+the values are the codes, the names are the labels.
+
+### Expected codes per variable
+
+The internal function
+[`pv_value_labels()`](https://a-helbig.github.io/nepstest/reference/pv_value_labels.md)
+reads the we-tag line by line. You can call it with `nepstest:::` to see
+the expected codes:
+
+``` r
+
+values_26ET <- nepstest:::pv_value_labels(pv_26ET)
+values_26ET[values_26ET$var == "etbs", ]
+```
+
+| Line in the we-tag | Example | Gives |
+|----|----|----|
+| Code | `1: Arbeiter/in` | code 1 “Arbeiter/in” |
+| Code with a condition | `if (h_etauto = 0) 5: Selbstständige/r` | code 5 “Selbstständige/r”, the condition is removed |
+| Buttons | `BUTTONS: verweigert (-97), weiß nicht (-98)` | codes -97 and -98 |
+| Button with a condition | `[if h_panel = 0] bis heute (-5)` | code -5 “bis heute” |
+| Interviewer hint | `<<z. B. Ärztin/Arzt, ...>>` | nothing |
+| List | `[Länderliste]`, `[Gemeindeliste]` | the codes come from a list that is not in the PV, see `list` below |
+| Open answer, date field | `OFFEN: ____`, `Monat ____ Jahr _____` | nothing |
+
+Grouped items:
+
+- **Multiple choice** (the we-tag has lines like `ts23525 1: ...` or
+  `[0: nicht genannt]`): every variable of the item gets the codes in
+  square brackets, usually `0: nicht genannt` and `1: genannt`. The
+  texts of the single answers and their conditions do not matter, they
+  are the variable labels.
+- **Dates**: the month variable gets the codes of the buttons plus the
+  season codes from the in-tag (`21=Jahresanfang/Winter`,
+  `24=Frühjahr/Ostern`, …). The year variable only gets the codes of the
+  buttons.
+- **Other lists** (e.g. `h_etzeit1`, `h_etzeit2`, …): every variable
+  gets the same codes.
+
+If a code appears several times with different texts (under different
+conditions), each of these texts is accepted.
+
+### Comparing the codes
+
+For every variable, all codes of the PV and of the data are compared:
+
+| Status | Meaning | Test fails? |
+|----|----|----|
+| `ok` | Code in PV and data, labels identical (apart from blanks). | no |
+| `format` | Labels differ only in brackets, slashes, hyphens, quotes, colons, commas or upper/lower case. | no |
+| `fill_in` | The PV label is only a fill-in like `<h_etarta1>`, so only the code is checked. | no |
+| `list` | The item takes its codes from a list that is not in the PV (e.g. `[Länderliste]`), so codes in the data that are not in the PV are not checked. They are counted in a NOTE. The buttons of the item (e.g. -96 “Land nicht in Liste”) are still checked. | no |
+| `mismatch` | The labels differ otherwise. | **yes** |
+| `missing_in_data` | The code is in the PV, but has no label in the data. | **yes** |
+| `not_in_pv` | The code has a label in the data, but is not in the PV. | **yes** |
+
+Variables without codes in the PV (e.g. episode numbers) must not have
+value labels in the data, otherwise each of their codes is `not_in_pv`.
+Character variables (open answers) cannot carry value labels in Stata
+and are skipped.
+
+The output lists the differences per variable:
+
+    Comparing the value labels of 98 variable(s) in T26_Full with the PV.
+    NOTE: 9 character variable(s) were skipped (open answers have no value labels).
+    ERROR - value labels of 2 variable(s) differ from the PV:
+      etbs  (item 26111)
+           3: missing in data (PV: "Beamtin/Beamter, auch Richter/in, außer Soldat/in")
+           9: not in PV (data: "Beamtin/Beamter, auch Richter/in, außer Soldat/in")
+      etselb1  (item 26113)
+           2: data: "Landwirtin"  PV: "Selbstständige/r Landwirt/in"
+    Error: value_label_test failed. Please inspect the above value labels.
+
+`show_format = TRUE` and `stop_on_fail = FALSE` work like in
+[`label_test()`](https://a-helbig.github.io/nepstest/reference/label_test.md).
+
+## Limits
+
+- The rules describe how the survey institute builds labels in the
+  deliveries checked so far (26ET, 23BV). If a module uses a different
+  convention, the affected variables show up as errors, and the rule has
+  to be added to
+  [`pv_var_labels()`](https://a-helbig.github.io/nepstest/reference/pv_var_labels.md)
+  (R/labels.R) or
+  [`pv_value_labels()`](https://a-helbig.github.io/nepstest/reference/pv_value_labels.md)
+  (R/value_labels.R).
+- The PV must be a docx file.
