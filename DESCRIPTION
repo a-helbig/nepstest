@@ -1,6 +1,6 @@
 Package: nepstest
 Title: Test NEPS Field Data Deliveries Against the Programming Templates
-Version: 0.1.0
+Version: 1.1.0
 Authors@R: 
     person("Alexander", "Helbig", , "alexander.helbig@wzb.eu", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
