@@ -81,6 +81,7 @@
 #' ef_test(T_27AL, "algb", almb %in% 1, use_duration = FALSE)
 #' }
 #'
+#' @family test functions
 #' @export ef_test
 ef_test <- function(data, test_var, condition, check = c("both", "asked", "not_asked"),
                     use_duration = TRUE, print_filter_vars = NULL) {

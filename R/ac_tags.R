@@ -45,6 +45,7 @@
 #'         print_filter_vars = c("etazv"))
 #' }
 #'
+#' @family test functions
 #' @export
 ac_test <- function(data, target_var, target_value, condition_var = NULL, operator = "equal", condition_value = NULL, print_filter_vars = NULL) {
   caseid_var <- "caseid"  # hardcoded default caseid column

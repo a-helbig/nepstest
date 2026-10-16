@@ -2,7 +2,7 @@
 % Please edit documentation in R/af_tags.R
 \name{af_test_simple}
 \alias{af_test_simple}
-\title{Tests for NA equality between var1 and var2}
+\title{Tests simple af-tags (superseded)}
 \usage{
 af_test_simple(
   data,
@@ -36,13 +36,20 @@ af_test_simple(
 when errors are detected. This is useful for making filtered or relevant variables visible in diagnostic printouts.}
 }
 \value{
-Invisibly returns the (possibly subsetted) data if NA patterns are identical or stops with an error if discrepancies found.
+Prints a success message if \code{var2} is never NA where \code{var1} is not NA. Otherwise prints the problematic rows and stops
+with an error.
 }
 \description{
 This function is designed for testing af-tags that filter from one item to the following item (under condition x).
-It checks that variables \code{var1} and \code{var2} have identical NA patterns, optionally under specified conditions.
+It checks that \code{var2} is not NA wherever \code{var1} is not NA, optionally under specified conditions.
 If any discrepancies are found, it prints the problematic cases and stops execution.
 }
+\section{Superseded}{
+
+This function tests exit filters (af-tags) of older PVs. New PVs use entry filters (ef-tags), use \code{\link[=ef_test]{ef_test()}} for
+those. The function is kept for PVs that still contain af-tags.
+}
+
 \examples{
 \dontrun{
 # Basic usage checking var1 and var2 equality of NA presence
@@ -56,3 +63,8 @@ af_test_simple(mydata, "var1", "var2", print_filter_vars = c("filter_var1", "fil
 }
 
 }
+\seealso{
+Other superseded af-tag tests: 
+\code{\link{af_test_complex}()}
+}
+\concept{superseded af-tag tests}

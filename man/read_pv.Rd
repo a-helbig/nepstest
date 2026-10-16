@@ -16,7 +16,7 @@ such tag) and \code{text} (the full text of the item).
 }
 \description{
 Reads the item table(s) of one or more PVs (Programmiervorlagen) in docx format and splits every item into its tags
-(\verb{--va:}, \verb{--vb:}, \verb{--we:}, \verb{--ef:} etc.). The result is the basis for \code{\link[=pv_var_labels]{pv_var_labels()}} and \code{\link[=label_test]{label_test()}}, but can
+(\verb{--va:}, \verb{--vb:}, \verb{--we:}, \verb{--ef:} etc.). The result is the basis for \code{\link[=label_test]{label_test()}} and \code{\link[=value_label_test]{value_label_test()}}, but can
 also be used directly, e.g. to look up the ef-tag of an item.
 }
 \details{
@@ -34,4 +34,7 @@ pv[, c("item", "va", "vb")]
 pv <- read_pv(c("PV_26ET.docx", "PV_27AL.docx"))
 }
 
+}
+\seealso{
+\code{\link[=label_test]{label_test()}} and \code{\link[=value_label_test]{value_label_test()}}, which compare the data with the PV.
 }

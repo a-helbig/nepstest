@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Reads the item table(s) of one or more PVs (Programmiervorlagen) in docx format and splits every item into its tags
-#' (`--va:`, `--vb:`, `--we:`, `--ef:` etc.). The result is the basis for [pv_var_labels()] and [label_test()], but can
+#' (`--va:`, `--vb:`, `--we:`, `--ef:` etc.). The result is the basis for [label_test()] and [value_label_test()], but can
 #' also be used directly, e.g. to look up the ef-tag of an item.
 #'
 #' @details
@@ -26,6 +26,7 @@
 #' pv <- read_pv(c("PV_26ET.docx", "PV_27AL.docx"))
 #' }
 #'
+#' @seealso [label_test()] and [value_label_test()], which compare the data with the PV.
 #' @export read_pv
 read_pv <- function(path) {
   if (!is.character(path) || length(path) == 0) {

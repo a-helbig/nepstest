@@ -2,7 +2,7 @@
 % Please edit documentation in R/af_tags.R
 \name{af_test_complex}
 \alias{af_test_complex}
-\title{Tests complex af-tag filters}
+\title{Tests complex af-tags (superseded)}
 \usage{
 af_test_complex(
   data,
@@ -39,10 +39,31 @@ af_test_complex(
 the printed output when errors occur. Useful for showing filtered or relevant variables clearly.}
 }
 \value{
-Invisibly returns the (possibly subsetted) data if all tests pass or stops with an error detailing problematic cases.
+Invisibly returns the tested rows (subsetted to the condition and to rows where \code{test_var} is not NA) if
+both tests pass. Otherwise prints the problematic rows and stops with an error.
 }
 \description{
 This function is designed for testing af-tags that filter from one item to another by skipping items in between (under condition x).
 It tests for NA equality between \code{test_var} and \code{target_var} and additionally whether all variables in \code{overfiltered_vars} are NA.
 If any errors occur, it prints the problematic cases with specified extra variables if requested.
 }
+\section{Superseded}{
+
+This function tests exit filters (af-tags) of older PVs. New PVs use entry filters (ef-tags), use \code{\link[=ef_test]{ef_test()}} for
+those. The function is kept for PVs that still contain af-tags.
+}
+
+\examples{
+\dontrun{
+# item a1 with --af: if (a1 = 2) goto a5: a2 to a4 must be NA, a5 must be asked
+af_test_complex(mydata, test_var = "a1", target_var = "a5",
+                overfiltered_vars = c("a2", "a3", "a4"),
+                condition_var = "a1", operator = "equal", condition_value = 2)
+}
+
+}
+\seealso{
+Other superseded af-tag tests: 
+\code{\link{af_test_simple}()}
+}
+\concept{superseded af-tag tests}

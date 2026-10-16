@@ -22,11 +22,11 @@ subset_data <- function(data, condition_var, condition_value, operator){
   return(data)
 }
 
-#' Tests for NA equality between var1 and var2
+#' Tests simple af-tags (superseded)
 #'
 #' @description
 #' This function is designed for testing af-tags that filter from one item to the following item (under condition x).
-#' It checks that variables `var1` and `var2` have identical NA patterns, optionally under specified conditions.
+#' It checks that `var2` is not NA wherever `var1` is not NA, optionally under specified conditions.
 #' If any discrepancies are found, it prints the problematic cases and stops execution.
 #'
 #' @param data A neps field-data dataframe.
@@ -41,7 +41,14 @@ subset_data <- function(data, condition_var, condition_value, operator){
 #' @param print_filter_vars Optional character vector. Additional variable names to be included and prioritized in the printed output
 #'   when errors are detected. This is useful for making filtered or relevant variables visible in diagnostic printouts.
 #'
-#' @return Invisibly returns the (possibly subsetted) data if NA patterns are identical or stops with an error if discrepancies found.
+#' @return Prints a success message if `var2` is never NA where `var1` is not NA. Otherwise prints the problematic rows and stops
+#'   with an error.
+#'
+#' @section Superseded:
+#' This function tests exit filters (af-tags) of older PVs. New PVs use entry filters (ef-tags), use [ef_test()] for
+#' those. The function is kept for PVs that still contain af-tags.
+#'
+#' @family superseded af-tag tests
 #'
 #' @examples
 #' \dontrun{
@@ -133,7 +140,7 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
 }
 
 
-#' Tests complex af-tag filters
+#' Tests complex af-tags (superseded)
 #'
 #' @description
 #' This function is designed for testing af-tags that filter from one item to another by skipping items in between (under condition x).
@@ -153,7 +160,22 @@ af_test_simple <- function(data, var1, var2, condition_var = NULL, operator = "e
 #' @param print_filter_vars Optional character vector of variable names to be included and prioritized in
 #'  the printed output when errors occur. Useful for showing filtered or relevant variables clearly.
 #'
-#' @return Invisibly returns the (possibly subsetted) data if all tests pass or stops with an error detailing problematic cases.
+#' @return Invisibly returns the tested rows (subsetted to the condition and to rows where `test_var` is not NA) if
+#'   both tests pass. Otherwise prints the problematic rows and stops with an error.
+#'
+#' @section Superseded:
+#' This function tests exit filters (af-tags) of older PVs. New PVs use entry filters (ef-tags), use [ef_test()] for
+#' those. The function is kept for PVs that still contain af-tags.
+#'
+#' @family superseded af-tag tests
+#'
+#' @examples
+#' \dontrun{
+#' # item a1 with --af: if (a1 = 2) goto a5: a2 to a4 must be NA, a5 must be asked
+#' af_test_complex(mydata, test_var = "a1", target_var = "a5",
+#'                 overfiltered_vars = c("a2", "a3", "a4"),
+#'                 condition_var = "a1", operator = "equal", condition_value = 2)
+#' }
 #'
 #' @export af_test_complex
 af_test_complex <- function(data, test_var, target_var, overfiltered_vars, condition_var = NULL,

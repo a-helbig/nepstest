@@ -28,11 +28,13 @@
 #'
 #' @examples
 #' \dontrun{
-#' values <- pv_value_labels("NEPS_B180_SC6_EP_26ET_V2_2_20250312.docx")
+#' values <- nepstest:::pv_value_labels("NEPS_B180_SC6_EP_26ET_V2_2_20250312.docx")
 #' values[values$var == "etbs", ]
 #' }
 #'
-#' @export pv_value_labels
+#' @seealso [value_label_test()], which uses this function. Call it yourself (`nepstest:::pv_value_labels()`) to
+#'   see which codes a variable is expected to have.
+#' @keywords internal
 pv_value_labels <- function(pv) {
   pv <- as_pv(pv)
   items <- pv[!is.na(pv$va) & nzchar(trimws(pv$va)), , drop = FALSE]
@@ -85,7 +87,7 @@ pv_value_labels <- function(pv) {
 #' differences per variable and stops at the end, like the other test functions.
 #'
 #' @param data A neps field-data dataframe, read with [haven::read_dta()].
-#' @param pv The result of [read_pv()] or [pv_value_labels()], or a path (or several paths) to PV docx files.
+#' @param pv The result of [read_pv()], or a path (or several paths) to PV docx files.
 #' @param ignore Character vector of regular expressions. Variables in the data whose names match are not checked.
 #'   Default: duration variables and variables ending in `_e`.
 #' @param show_format Logical, if TRUE the labels that differ only in formatting are printed as well.
@@ -107,6 +109,7 @@ pv_value_labels <- function(pv) {
 #' res[res$status != "ok", ]
 #' }
 #'
+#' @family test functions
 #' @export value_label_test
 value_label_test <- function(data, pv, ignore = c("duration$", "_e$"), show_format = FALSE, stop_on_fail = TRUE) {
   data_name <- deparse(substitute(data))

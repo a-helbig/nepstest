@@ -70,3 +70,11 @@ ac_test(filtered_data, target_var = "h_etumf", target_value = 1,
 }
 
 }
+\seealso{
+Other test functions: 
+\code{\link{date_test_complex}()},
+\code{\link{ef_test}()},
+\code{\link{label_test}()},
+\code{\link{value_label_test}()}
+}
+\concept{test functions}

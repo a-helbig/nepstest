@@ -16,7 +16,7 @@ label_test(
 \arguments{
 \item{data}{A neps field-data dataframe, read with \code{\link[haven:read_dta]{haven::read_dta()}} so that the variables carry their labels.}
 
-\item{pv}{The result of \code{\link[=read_pv]{read_pv()}} or \code{\link[=pv_var_labels]{pv_var_labels()}}, or a path (or several paths) to PV docx files.}
+\item{pv}{The result of \code{\link[=read_pv]{read_pv()}}, or a path (or several paths) to PV docx files.}
 
 \item{ignore}{Character vector of regular expressions. Variables in the data whose names match are not checked.
 Default: duration variables and variables ending in \verb{_e}.}
@@ -72,3 +72,11 @@ res[res$status == "mismatch", ]
 }
 
 }
+\seealso{
+Other test functions: 
+\code{\link{ac_test}()},
+\code{\link{date_test_complex}()},
+\code{\link{ef_test}()},
+\code{\link{value_label_test}()}
+}
+\concept{test functions}

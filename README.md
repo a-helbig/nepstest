@@ -1,73 +1,56 @@
 # nepstest
 
-This package contains functions for testing NEPS Feldddatenlieferungen. The functions specifically tests if ac-tags, af-tags and ra-tags were programmed as intended by comparing values from different variables in the datasets. The most important functions are thus: ac_test, af_test_simple, af_test_complex and date_test_complex. The others are more or less helper functions that facilitate specific things. Review the B180 written test scripts in order to understand how the functions are used in practice.
+nepstest checks NEPS field data deliveries (Felddatenlieferungen) against the programming templates (PVs). Each
+function tests one kind of PV tag. It prints `SUCCESS` if the data are fine. Otherwise it prints the problematic rows
+and caseids and stops with an error.
 
-Install the package with `remotes::install_github('a-helbig/nepstest')`. Note that you might need to install remotes package before.
+## Installation
 
+```r
+# install.packages("remotes")
+remotes::install_github("a-helbig/nepstest")
+```
 
-- `ac_test()`
-Tests if target variable equals target value
+## Which function for which tag
 
+| PV tag | What is tested | Function |
+|---|---|---|
+| `--ef:` | entry filter: item asked if and only if the condition holds | `ef_test()` |
+| `--ac:` | autocoding: variable has the expected value | `ac_test()` |
+| `--ra:` (dates) | date lies between two other dates | `date_test_complex()` |
+| `--vb:` | variable labels | `label_test()` |
+| `--we:` | value labels (codes and their labels) | `value_label_test()` |
+| `--af:` (older PVs) | exit filter, **superseded** by ef-tags | `af_test_simple()`, `af_test_complex()` |
 
-- `af_test_complex()`
-Tests complex af-tag filters
+`read_pv()` reads a PV docx file. The label tests need it, and it is handy for looking up the tags of an item.
 
+## Example
 
-- `af_test_simple()`
-Tests for NA equality between var1 and var2
+```r
+library(nepstest)
 
+T_26ET  <- haven::read_dta("26ET.dta")   # keeps variable and value labels
+T_27AL  <- haven::read_dta("27AL.dta")
+pv_27AL <- read_pv("PV_27AL.docx")
 
-- `ef_test()`
-Tests ef-tags (entry filters)
+# aliz: --ef: if (h_panel = 1)
+ef_test(T_27AL, "aliz", h_panel == 1)
 
+# h_etumf must be 1 where etazv is between 15 and 90
+ac_test(T_26ET[T_26ET$etazv %in% 15:90, ], target_var = "h_etumf", target_value = 1)
 
-- `label_test()`
-Tests the variable labels in the data against the va- and vb-tags of the PV. How the test works is explained in `vignette("label_test", package = "nepstest")`
+# start and end date between previous and current interview
+date_test_complex(T_26ET, "intmPRE", "intjPRE", "intm", "intj",
+                  "etstm", "etstj", "etendm", "etendj")
 
+# all variable and value labels of the module
+label_test(T_27AL, pv_27AL)
+value_label_test(T_27AL, pv_27AL)
+```
 
-- `value_label_test()`
-Tests the value labels (codes and their labels) in the data against the we-tags of the PV, see the same vignette
+## Documentation
 
-
-- `read_pv()`
-Reads a PV (docx) and splits every item into its tags
-
-
-- `pv_var_labels()`
-Expected variable labels from a PV, one row per variable
-
-
-- `pv_value_labels()`
-Expected codes and value labels from a PV, one row per variable and code
-
-
-- `date_test()`
-Compare the values of two date items
-
-
-- `date_test_complex()`
-Tests event or episode date variables
-
-
-- `expand()`
-Expand episode data to monthly structure
-
-
-- `no_na_in_vars()`
-Tests if there are no NA values in var_names
-
-
-- `only_na_in_vars()`
-Tests if there are only NA values in specified var_names
-
-
-- `replace_season_codes()`
-Replace season codes in date variables with corresponding months
-
-
-- `replace_values_with_na()`
-Set specific values to NA
-
-
-- `var_exists()`
-Test if variables are existent in the data
+* `vignette("nepstest")`: getting started. Covers the task, how to translate PV conditions into R, a walkthrough of a
+  module check, and what to do when a test fails.
+* `vignette("label_test")`: how the label tests derive the expected labels from the PV.
+* `?ef_test`, `?ac_test`, ...: details of each function.

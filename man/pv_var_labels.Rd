@@ -42,8 +42,13 @@ Markers in front of the variable name (e.g. \verb{[ZS]}, \verb{[HILF]}) and \ver
 }
 \examples{
 \dontrun{
-labels <- pv_var_labels("NEPS_B180_SC6_EP_26ET_V2_2_20250312.docx")
+labels <- nepstest:::pv_var_labels("NEPS_B180_SC6_EP_26ET_V2_2_20250312.docx")
 labels[labels$var \%in\% c("etstm", "ts23528"), ]
 }
 
 }
+\seealso{
+\code{\link[=label_test]{label_test()}}, which uses this function. Call it yourself (\code{nepstest:::pv_var_labels()}) to see
+which label a variable is expected to have.
+}
+\keyword{internal}

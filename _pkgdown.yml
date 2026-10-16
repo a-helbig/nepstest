@@ -1,4 +1,33 @@
-url: ~
+url: https://a-helbig.github.io/nepstest/
 template:
   bootstrap: 5
 
+reference:
+- title: Reading PVs
+  contents:
+  - read_pv
+- title: Filters (ef-tags)
+  contents:
+  - ef_test
+- title: Autocodings (ac-tags)
+  contents:
+  - ac_test
+- title: Date ranges (ra-tags)
+  contents:
+  - date_test_complex
+- title: Labels (vb- and we-tags)
+  contents:
+  - label_test
+  - value_label_test
+- title: Superseded
+  desc: Tests for exit filters (af-tags) in older PVs. Use `ef_test()` for PVs with entry filters.
+  contents:
+  - af_test_simple
+  - af_test_complex
+
+articles:
+- title: Articles
+  navbar: ~
+  contents:
+  - nepstest
+  - label_test

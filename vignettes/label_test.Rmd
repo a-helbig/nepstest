@@ -56,11 +56,11 @@ pv_26ET[pv_26ET$item %in% "26181b", c("va", "ef")]
 
 ## Step 2: Expected label per variable
 
-`pv_var_labels()` derives from the va- and vb-tags which label each variable should have in the data. You can call it
-yourself to see the expected labels:
+The internal function `pv_var_labels()` derives from the va- and vb-tags which label each variable should have in the
+data. It is not exported, but you can call it with `nepstest:::` to see the expected labels:
 
 ```{r}
-labels_26ET <- pv_var_labels(pv_26ET)
+labels_26ET <- nepstest:::pv_var_labels(pv_26ET)
 ```
 
 Markers in front of the variable name (`[ZS]`, `[HILF]`, ...) and `[MF]` at the start of the vb-tag are removed.
@@ -157,10 +157,11 @@ compared. In the data, the value labels of a variable are a named vector (attrib
 
 ## Expected codes per variable
 
-`pv_value_labels()` reads the we-tag line by line. You can call it yourself to see the expected codes:
+The internal function `pv_value_labels()` reads the we-tag line by line. You can call it with `nepstest:::` to see the
+expected codes:
 
 ```{r}
-values_26ET <- pv_value_labels(pv_26ET)
+values_26ET <- nepstest:::pv_value_labels(pv_26ET)
 values_26ET[values_26ET$var == "etbs", ]
 ```
 
@@ -222,5 +223,5 @@ Error: value_label_test failed. Please inspect the above value labels.
 
 * The rules describe how the survey institute builds labels in the deliveries checked so far (26ET, 23BV). If a module
   uses a different convention, the affected variables show up as errors, and the rule has to be added to
-  `pv_var_labels()` or `pv_value_labels()`.
+  `pv_var_labels()` (R/labels.R) or `pv_value_labels()` (R/value_labels.R).
 * The PV must be a docx file.

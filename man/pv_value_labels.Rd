@@ -37,8 +37,13 @@ in the PV. The name of the list is kept in the column \code{list}, the buttons o
 }
 \examples{
 \dontrun{
-values <- pv_value_labels("NEPS_B180_SC6_EP_26ET_V2_2_20250312.docx")
+values <- nepstest:::pv_value_labels("NEPS_B180_SC6_EP_26ET_V2_2_20250312.docx")
 values[values$var == "etbs", ]
 }
 
 }
+\seealso{
+\code{\link[=value_label_test]{value_label_test()}}, which uses this function. Call it yourself (\code{nepstest:::pv_value_labels()}) to
+see which codes a variable is expected to have.
+}
+\keyword{internal}

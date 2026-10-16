@@ -4,9 +4,28 @@
 \name{nepstest-package}
 \alias{nepstest}
 \alias{nepstest-package}
-\title{nepstest: What the Package Does (One Line, Title Case)}
+\title{nepstest: Testing NEPS field data deliveries against the PV}
 \description{
-Functions for testing NEPS field-data, in particular af-tag, ac-tag, ef-tag, ra-tag and variable labels.
+During the field period the survey institute sends field data deliveries (Stata \code{.dta} files). nepstest checks
+whether these data follow the programming templates (PVs, Programmiervorlagen). Every function tests one kind of
+tag of the PV and either prints \code{SUCCESS} or prints the problematic rows and caseids and stops with an error.
+
+Which function for which tag:\tabular{lll}{
+   PV tag \tab What is tested \tab Function \cr
+   ef-tag \tab entry filter: item asked if and only if the condition holds \tab \code{\link[=ef_test]{ef_test()}} \cr
+   ac-tag \tab autocoding: variable has the expected value \tab \code{\link[=ac_test]{ac_test()}} \cr
+   ra-tag (dates) \tab date lies between two other dates \tab \code{\link[=date_test_complex]{date_test_complex()}} \cr
+   vb-tag \tab variable labels \tab \code{\link[=label_test]{label_test()}} \cr
+   we-tag \tab value labels (codes and their labels) \tab \code{\link[=value_label_test]{value_label_test()}} \cr
+   af-tag (older PVs) \tab exit filter \tab \code{\link[=af_test_simple]{af_test_simple()}}, \code{\link[=af_test_complex]{af_test_complex()}} (superseded) \cr
+}
+
+
+\code{\link[=read_pv]{read_pv()}} reads a PV docx file. Its result is needed for the label tests and is handy to look up the tags of an
+item.
+
+Start with \code{vignette("nepstest")} for a complete walkthrough of a module check, and see
+\code{vignette("label_test")} for how the label tests work.
 }
 \author{
 \strong{Maintainer}: Alexander Helbig \email{alexander.helbig@wzb.eu} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})

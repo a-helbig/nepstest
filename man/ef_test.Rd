@@ -103,3 +103,11 @@ ef_test(T_27AL, "algb", almb \%in\% 1, use_duration = FALSE)
 }
 
 }
+\seealso{
+Other test functions: 
+\code{\link{ac_test}()},
+\code{\link{date_test_complex}()},
+\code{\link{label_test}()},
+\code{\link{value_label_test}()}
+}
+\concept{test functions}

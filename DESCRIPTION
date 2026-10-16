@@ -1,11 +1,16 @@
 Package: nepstest
-Title: What the Package Does (One Line, Title Case)
+Title: Test NEPS Field Data Deliveries Against the Programming Templates
 Version: 0.1.0
 Authors@R: 
     person("Alexander", "Helbig", , "alexander.helbig@wzb.eu", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: Functions for testing NEPS field-data, in particular af-tag, ac-tag, ef-tag, ra-tag and variable labels.
+Description: Checks field data deliveries of the National Educational Panel Study
+    (NEPS) against the programming templates (PVs): entry filters (ef-tags),
+    autocodings (ac-tags), date ranges (ra-tags), variable labels and value
+    labels. Older exit filters (af-tags) are still supported.
 License: MIT + file LICENSE
+URL: https://a-helbig.github.io/nepstest/, https://github.com/a-helbig/nepstest
+BugReports: https://github.com/a-helbig/nepstest/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
