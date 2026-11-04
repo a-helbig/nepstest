@@ -95,11 +95,21 @@ read_pv_single <- function(path) {
   out
 }
 
-# Text of one table cell: paragraphs are separated by line breaks, tabs and breaks inside paragraphs are kept
+# Text of one table cell: paragraphs are separated by line breaks, tabs and breaks inside paragraphs are kept.
+# Struck-through text (e.g. "h_hbfachs~~PRE~~") counts as deleted in the PV and is dropped.
 docx_cell_text <- function(cell, ns) {
   paragraphs <- xml2::xml_find_all(cell, ".//w:p", ns)
+  struck <- paste0(
+    "ancestor::w:r[1]/w:rPr/*[(self::w:strike or self::w:dstrike)",
+    " and not(@w:val='0' or @w:val='false' or @w:val='off')]"
+  )
   lines <- vapply(paragraphs, function(p) {
-    nodes <- xml2::xml_find_all(p, ".//w:t | .//w:tab | .//w:br | .//w:cr", ns)
+    nodes <- xml2::xml_find_all(
+      p,
+      paste0(".//w:t[not(", struck, ")] | .//w:tab[not(", struck, ")] | ",
+             ".//w:br[not(", struck, ")] | .//w:cr[not(", struck, ")]"),
+      ns
+    )
     parts <- vapply(nodes, function(n) {
       switch(xml2::xml_name(n), t = xml2::xml_text(n), tab = "\t", "\n")
     }, character(1))
