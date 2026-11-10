@@ -39,7 +39,7 @@
 #' @param data A neps field-data dataframe.
 #' @param test_var A string with the name of the item that carries the ef-tag. Can also be a character vector of several
 #'   items that share the same entry condition.
-#' @param condition The entry condition as an unquoted R expression, e.g. `h_panel == 1 & !alintrop %in% 2`.
+#' @param condition The entry condition as an unquoted R expression, e.g. `h_panel %in% 1 & !alintrop %in% 2`.
 #'   Use `TRUE` for items that are always asked. Objects from your script (e.g. a vector of codes) can be used too.
 #'   A single string with the expression is accepted as well, e.g. `"h_panel == 1"`, and so is a variable that holds
 #'   a string or a quoted expression, e.g. `cond <- quote(h_panel == 1)`, which is handy if several items share a condition.
@@ -56,10 +56,10 @@
 #' @examples
 #' \dontrun{
 #' # aliz: --ef: if (h_panel = 1)
-#' ef_test(T_27AL, "aliz", h_panel == 1)
+#' ef_test(T_27AL, "aliz", h_panel %in% 1)
 #'
 #' # aliz2: --ef: if (h_panel = 0 & h_dauertan = 2)
-#' ef_test(T_27AL, "aliz2", h_panel == 0 & h_dauertan == 2)
+#' ef_test(T_27AL, "aliz2", h_panel %in% 0 & h_dauertan %in% 2)
 #'
 #' # almb: --ef: if (almod1 = 1, 2, 4), within Block 2 with --ef: if (alintrop <> 2)
 #' ef_test(T_27AL, "almb", !alintrop %in% 2 & almod1 %in% c(1, 2, 4))
