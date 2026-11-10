@@ -112,21 +112,28 @@ asked”.
 
 The condition is written as R code. Translate the PV syntax like this:
 
-| PV                 | R                        |
-|--------------------|--------------------------|
-| `x = 1, 2`         | `x %in% c(1, 2)`         |
-| `x <> 2`           | `!x %in% 2`              |
-| `x = .` / `x <> .` | `is.na(x)` / `!is.na(x)` |
-| `&` / `OR`         | `&` / `|`                |
-| several `if` lines | combine with `|`         |
+| PV                  | R                                         |
+|---------------------|-------------------------------------------|
+| `x = 1, 2`          | `x %in% c(1, 2)`                          |
+| `x != 2` / `x <> 2` | `!x %in% 2` (also TRUE if `x` is missing) |
+| `x = .` / `x != .`  | `is.na(x)` / `!is.na(x)`                  |
+| `&` / `OR`          | `&` / `|`                                 |
+| several `if` lines  | combine with `|`                          |
 
-Prefer `%in%` over `==`: `x == 1` is NA when `x` is missing, `x %in% 1`
-is FALSE.
+Never use `==` or `!=` in a condition. In the CATI, “x not equal 2” is
+also true when x is missing. In R, `x != 2` is NA when x is missing, and
+[`ef_test()`](https://a-helbig.github.io/nepstest/reference/ef_test.md)
+treats NA as “condition not met”, so the test silently checks the wrong
+thing. `!x %in% 2` is TRUE when x is missing, and `x %in% 1` is FALSE.
+If
+[`ef_test()`](https://a-helbig.github.io/nepstest/reference/ef_test.md)
+prints a NOTE that the condition evaluates to NA, the condition needs
+fixing. More on this in `GUIDELINES.md` in the package repository.
 
 ``` r
 
 # aliz: --ef: if (h_panel = 1)
-ef_test(T_27AL, "aliz", h_panel == 1)
+ef_test(T_27AL, "aliz", h_panel %in% 1)
 
 # almb: --ef: if (almod1 = 1, 2, 4), inside Block 2 with --ef: if (alintrop <> 2)
 ef_test(T_27AL, "almb", !alintrop %in% 2 & almod1 %in% c(1, 2, 4))

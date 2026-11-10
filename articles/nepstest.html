@@ -221,12 +221,15 @@ this:</p>
 <td><code>x %in% c(1, 2)</code></td>
 </tr>
 <tr class="even">
-<td><code>x &lt;&gt; 2</code></td>
-<td><code>!x %in% 2</code></td>
+<td>
+<code>x != 2</code> / <code>x &lt;&gt; 2</code>
+</td>
+<td>
+<code>!x %in% 2</code> (also TRUE if <code>x</code> is missing)</td>
 </tr>
 <tr class="odd">
 <td>
-<code>x = .</code> / <code>x &lt;&gt; .</code>
+<code>x = .</code> / <code>x != .</code>
 </td>
 <td>
 <code>is.na(x)</code> / <code>!is.na(x)</code>
@@ -247,11 +250,17 @@ this:</p>
 </tr>
 </tbody>
 </table>
-<p>Prefer <code>%in%</code> over <code>==</code>: <code>x == 1</code> is
-NA when <code>x</code> is missing, <code>x %in% 1</code> is FALSE.</p>
+<p>Never use <code>==</code> or <code>!=</code> in a condition. In the
+CATI, “x not equal 2” is also true when x is missing. In R,
+<code>x != 2</code> is NA when x is missing, and <code><a href="../reference/ef_test.html">ef_test()</a></code>
+treats NA as “condition not met”, so the test silently checks the wrong
+thing. <code>!x %in% 2</code> is TRUE when x is missing, and
+<code>x %in% 1</code> is FALSE. If <code><a href="../reference/ef_test.html">ef_test()</a></code> prints a NOTE
+that the condition evaluates to NA, the condition needs fixing. More on
+this in <code>GUIDELINES.md</code> in the package repository.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># aliz: --ef: if (h_panel = 1)</span></span>
-<span><span class="fu"><a href="../reference/ef_test.html">ef_test</a></span><span class="op">(</span><span class="va">T_27AL</span>, <span class="st">"aliz"</span>, <span class="va">h_panel</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/ef_test.html">ef_test</a></span><span class="op">(</span><span class="va">T_27AL</span>, <span class="st">"aliz"</span>, <span class="va">h_panel</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># almb: --ef: if (almod1 = 1, 2, 4), inside Block 2 with --ef: if (alintrop &lt;&gt; 2)</span></span>
 <span><span class="fu"><a href="../reference/ef_test.html">ef_test</a></span><span class="op">(</span><span class="va">T_27AL</span>, <span class="st">"almb"</span>, <span class="op">!</span><span class="va">alintrop</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fl">2</span> <span class="op">&amp;</span> <span class="va">almod1</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">4</span><span class="op">)</span><span class="op">)</span></span>

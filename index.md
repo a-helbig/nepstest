@@ -39,7 +39,7 @@ T_27AL  <- haven::read_dta("27AL.dta")
 pv_27AL <- read_pv("PV_27AL.docx")
 
 # aliz: --ef: if (h_panel = 1)
-ef_test(T_27AL, "aliz", h_panel == 1)
+ef_test(T_27AL, "aliz", h_panel %in% 1)
 
 # h_etumf must be 1 where etazv is between 15 and 90
 ac_test(T_26ET[T_26ET$etazv %in% 15:90, ], target_var = "h_etumf", target_value = 1)

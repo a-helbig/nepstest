@@ -126,7 +126,7 @@
 <span><span class="va">pv_27AL</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_pv.html">read_pv</a></span><span class="op">(</span><span class="st">"PV_27AL.docx"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># aliz: --ef: if (h_panel = 1)</span></span>
-<span><span class="fu"><a href="reference/ef_test.html">ef_test</a></span><span class="op">(</span><span class="va">T_27AL</span>, <span class="st">"aliz"</span>, <span class="va">h_panel</span> <span class="op">==</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/ef_test.html">ef_test</a></span><span class="op">(</span><span class="va">T_27AL</span>, <span class="st">"aliz"</span>, <span class="va">h_panel</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># h_etumf must be 1 where etazv is between 15 and 90</span></span>
 <span><span class="fu"><a href="reference/ac_test.html">ac_test</a></span><span class="op">(</span><span class="va">T_26ET</span><span class="op">[</span><span class="va">T_26ET</span><span class="op">$</span><span class="va">etazv</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fl">15</span><span class="op">:</span><span class="fl">90</span>, <span class="op">]</span>, target_var <span class="op">=</span> <span class="st">"h_etumf"</span>, target_value <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
