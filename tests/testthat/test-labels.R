@@ -157,3 +157,13 @@ test_that("label_test: an item number that belongs to another variable is an err
   d <- make_labelled_data(labels)
   expect_error(suppressMessages(label_test(d, pv_path)), "label_test failed")
 })
+
+test_that("va_vars: a plain list of variables without a group name is split", {
+  expect_equal(va_vars("t743021 / t743022 / t743023"), c("t743021", "t743022", "t743023"))
+  expect_equal(va_vars("t743021, t743022"), c("t743021", "t743022"))
+  expect_equal(va_vars("etstdat (etstm / etstj)"), c("etstm", "etstj"))
+  expect_equal(va_vars("etbs"), "etbs")
+  lab <- expand_item_labels("t743021 / t743022", "Aussage (Teamarbeit / Vorgesetzte)", NA_character_)
+  expect_equal(lab$var, c("t743021", "t743022"))
+  expect_equal(lab$label, c("Aussage Teamarbeit", "Aussage Vorgesetzte"))
+})

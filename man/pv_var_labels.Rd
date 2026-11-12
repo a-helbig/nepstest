@@ -16,8 +16,8 @@ A data frame with one row per variable and the columns \code{var}, \code{label} 
 \description{
 Derives the variable label that each variable should have in the field data from the va- and vb-tags of a PV. Items
 whose va-tag holds several variables, e.g. dates (\code{etstdat (etstm / etstj)}), multiple choice items
-(\code{ts2352 (ts23525 / ts23526 / ...)}) or lists separated by commas (\code{h_etzeit (h_etzeit1, h_etzeit2, ...)}), are split
-into one row per variable.
+(\code{ts2352 (ts23525 / ts23526 / ...)}), lists separated by commas (\code{h_etzeit (h_etzeit1, h_etzeit2, ...)}) or plain
+lists without a group name (\code{t743021 / t743022 / t743023}), are split into one row per variable.
 }
 \details{
 The labels in the data are built by the survey institute from the vb-tag. Brackets and slashes are dropped and every

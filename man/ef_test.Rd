@@ -77,10 +77,10 @@ instead (e.g. \code{scr_alenddatduration}). The output names the duration variab
 \examples{
 \dontrun{
 # aliz: --ef: if (h_panel = 1)
-ef_test(T_27AL, "aliz", h_panel %in% 1)
+ef_test(T_27AL, "aliz", h_panel \%in\% 1)
 
 # aliz2: --ef: if (h_panel = 0 & h_dauertan = 2)
-ef_test(T_27AL, "aliz2", h_panel %in% 0 & h_dauertan %in% 2)
+ef_test(T_27AL, "aliz2", h_panel \%in\% 0 & h_dauertan \%in\% 2)
 
 # almb: --ef: if (almod1 = 1, 2, 4), within Block 2 with --ef: if (alintrop <> 2)
 ef_test(T_27AL, "almb", !alintrop \%in\% 2 & almod1 \%in\% c(1, 2, 4))

@@ -3,8 +3,8 @@
 #' @description
 #' Derives the variable label that each variable should have in the field data from the va- and vb-tags of a PV. Items
 #' whose va-tag holds several variables, e.g. dates (`etstdat (etstm / etstj)`), multiple choice items
-#' (`ts2352 (ts23525 / ts23526 / ...)`) or lists separated by commas (`h_etzeit (h_etzeit1, h_etzeit2, ...)`), are split
-#' into one row per variable.
+#' (`ts2352 (ts23525 / ts23526 / ...)`), lists separated by commas (`h_etzeit (h_etzeit1, h_etzeit2, ...)`) or plain
+#' lists without a group name (`t743021 / t743022 / t743023`), are split into one row per variable.
 #'
 #' @details
 #' The labels in the data are built by the survey institute from the vb-tag. Brackets and slashes are dropped and every
@@ -315,6 +315,15 @@ clean_va <- function(va) {
   squish(va)
 }
 
+# Variables of a cleaned va-tag. "etstdat (etstm / etstj)" gives the variables in the bracket, a plain list like
+# "t743021 / t743022" or "t743021, t743022" gives its parts, anything else is a single variable.
+va_vars <- function(va_clean) {
+  m <- regmatches(va_clean, regexec("^([^ (]+)\\s*\\((.*)\\)$", va_clean))[[1]]
+  inner <- if (length(m) > 0) m[3] else if (grepl("[/,]", va_clean)) va_clean else return(va_clean)
+  vars <- trimws(strsplit(inner, "[/,]")[[1]])
+  vars[nzchar(vars)]
+}
+
 # Clean a vb-tag: first line, [MF] at the start removed, blanks collapsed
 clean_vb <- function(vb) {
   if (is.na(vb)) return(NA_character_)
@@ -333,14 +342,12 @@ expand_item_labels <- function(va, vb, we) {
     data.frame(var = var, label = label, note = note, stringsAsFactors = FALSE)
   }
 
-  m <- regmatches(va_clean, regexec("^([^ (]+)\\s*\\((.*)\\)$", va_clean))[[1]]
-  if (length(m) == 0) {
+  vars <- va_vars(va_clean)
+  if (length(vars) == 1 && !grepl("(", va_clean, fixed = TRUE)) {
     note <- if (is.na(vb_clean)) "the item has no vb-tag" else NA_character_
-    return(make(va_clean, vb_clean, note))
+    return(make(vars, vb_clean, note))
   }
 
-  vars <- trimws(strsplit(m[3], "[/,]")[[1]])
-  vars <- vars[nzchar(vars)]
   if (is.na(vb_clean)) {
     return(make(vars, NA_character_, "the item has no vb-tag"))
   }

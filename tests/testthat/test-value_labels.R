@@ -106,3 +106,25 @@ test_that("value_label_test: codes from a list that is not in the PV are a note,
   d <- make_value_data(list(etland = countries[-3]))
   expect_error(suppressMessages(value_label_test(d, pv_path)), "value_label_test failed")
 })
+
+test_that("value_label_test: season codes of date variables are fine even if the PV does not list them", {
+  seasons <- c("Jahresanfang/Winter" = 21, "Frühjahr/Ostern" = 24, "Jahresmitte/Sommer" = 27, "Herbst" = 30,
+               "Jahresende" = 32)
+  # etstm: date in the PV without season codes in the in-tag
+  vl <- pv_value_labels(pv_path)
+  expect_true(all(vl$date[vl$var %in% c("etstm", "etendm", "ettrennm")]))
+  expect_false(any(vl$date[vl$var == "etbs"]))
+
+  d <- make_value_data(list(ettrennm = seasons))
+  res <- suppressMessages(value_label_test(d, pv_path))
+  expect_equal(res$status, rep("season", 5))
+  expect_message(value_label_test(d, pv_path), "1 date variable\\(s\\) have season codes")
+
+  # not a date variable: still an error
+  d <- make_value_data(list(etbs = c(correct_values$etbs, "Herbst" = 30)))
+  expect_error(suppressMessages(value_label_test(d, pv_path)), "value_label_test failed")
+
+  # a date variable with a code 21-32 that is not a season: still an error
+  d <- make_value_data(list(ettrennm = c("irgendwas" = 22)))
+  expect_error(suppressMessages(value_label_test(d, pv_path)), "value_label_test failed")
+})

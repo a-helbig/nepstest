@@ -27,8 +27,8 @@ only prints the results and returns the result table.}
 }
 \value{
 Invisibly a data frame with one row per variable and code and the columns \code{var}, \code{pv_var}, \code{code},
-\code{data_label}, \code{pv_label}, \code{status} ("ok", "format", "fill_in", "list", "mismatch", "missing_in_data", "not_in_pv") and
-\code{item}.
+\code{data_label}, \code{pv_label}, \code{status} ("ok", "format", "fill_in", "list", "season", "mismatch", "missing_in_data",
+"not_in_pv") and \code{item}.
 If differences are found and \code{stop_on_fail = TRUE}, the function stops with an error after printing them.
 }
 \description{
@@ -51,6 +51,10 @@ formatting difference. Use \code{show_format = TRUE} to list them.
 \item the label in the PV is only a fill-in like \verb{<h_etarta1>}: only the code is checked, the text is listed as a NOTE.
 \item the item takes its codes from a list that is not in the PV (e.g. a country list): the codes in the data that are not
 in the PV are not checked and counted in a NOTE. The buttons of the item are checked as usual.
+\item date variables: season codes (21 to 32, e.g. "Jahresanfang/Winter", "Jahresmitte/Sommer", "Herbst",
+"Jahresende") that are in the data but not in the PV are fine, because the PVs often do not list them. They
+are counted in a NOTE. A variable is a date variable if its vb-tag (see \code{\link[=pv_value_labels]{pv_value_labels()}}) or its variable label in
+the data mentions "Datum" or "Monat".
 }
 
 Character variables (open answers) cannot carry value labels in Stata and are skipped. The function prints all

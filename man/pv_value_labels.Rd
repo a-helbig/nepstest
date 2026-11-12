@@ -11,8 +11,8 @@ pv_value_labels(pv)
 }
 \value{
 A data frame with one row per variable and code and the columns \code{var}, \code{code}, \code{label}, \code{list} (name of a
-list like \verb{[Gemeindeliste]} the codes come from, otherwise NA), \code{item}, \code{va} and \code{pv}. Variables of the PV without
-any code (e.g. open questions without buttons) have one row with \code{code} NA.
+list like \verb{[Gemeindeliste]} the codes come from, otherwise NA), \code{date} (TRUE for date items), \code{item}, \code{va} and
+\code{pv}. Variables of the PV without any code (e.g. open questions without buttons) have one row with \code{code} NA.
 }
 \description{
 Derives from the we-tags of a PV which codes and value labels each variable should have in the field data. Grouped
@@ -34,6 +34,8 @@ variable of the item. The lines for the single variables (\verb{ts23525 1: Sonde
 in the PV. The name of the list is kept in the column \code{list}, the buttons of the item are read as usual.
 \item If the same code appears several times with different texts (e.g. under different conditions), every text is accepted.
 }
+
+An item counts as a date (column \code{date}) if its vb-tag mentions "Datum" or "Monat".
 }
 \examples{
 \dontrun{

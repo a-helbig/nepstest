@@ -20,11 +20,13 @@
 #'   in the PV. The name of the list is kept in the column `list`, the buttons of the item are read as usual.
 #' * If the same code appears several times with different texts (e.g. under different conditions), every text is accepted.
 #'
+#' An item counts as a date (column `date`) if its vb-tag mentions "Datum" or "Monat".
+#'
 #' @param pv The result of [read_pv()], or a path (or several paths) to PV docx files.
 #'
 #' @return A data frame with one row per variable and code and the columns `var`, `code`, `label`, `list` (name of a
-#'   list like `[Gemeindeliste]` the codes come from, otherwise NA), `item`, `va` and `pv`. Variables of the PV without
-#'   any code (e.g. open questions without buttons) have one row with `code` NA.
+#'   list like `[Gemeindeliste]` the codes come from, otherwise NA), `date` (TRUE for date items), `item`, `va` and
+#'   `pv`. Variables of the PV without any code (e.g. open questions without buttons) have one row with `code` NA.
 #'
 #' @examples
 #' \dontrun{
@@ -52,10 +54,12 @@ pv_value_labels <- function(pv) {
     out$va <- rep(items$va[i], nrow(out))
     out$pv <- rep(items$pv[i], nrow(out))
     out$list <- rep(parse_we_tag(we[i])$list, nrow(out))
+    out$date <- rep(is_date_vb(vb[i]), nrow(out))
     out
   })
   out <- do.call(rbind, rows)
-  out <- out[!duplicated(out[, c("var", "code", "label")]), c("var", "code", "label", "list", "item", "va", "pv")]
+  out <- out[!duplicated(out[, c("var", "code", "label")]),
+             c("var", "code", "label", "list", "date", "item", "va", "pv")]
   rownames(out) <- NULL
   out
 }
@@ -82,6 +86,10 @@ pv_value_labels <- function(pv) {
 #' * the label in the PV is only a fill-in like `<h_etarta1>`: only the code is checked, the text is listed as a NOTE.
 #' * the item takes its codes from a list that is not in the PV (e.g. a country list): the codes in the data that are not
 #'   in the PV are not checked and counted in a NOTE. The buttons of the item are checked as usual.
+#' * date variables: season codes (21 to 32, e.g. "Jahresanfang/Winter", "Jahresmitte/Sommer", "Herbst",
+#'   "Jahresende") that are in the data but not in the PV are fine, because the PVs often do not list them. They
+#'   are counted in a NOTE. A variable is a date variable if its vb-tag (see [pv_value_labels()]) or its variable label in
+#'   the data mentions "Datum" or "Monat".
 #'
 #' Character variables (open answers) cannot carry value labels in Stata and are skipped. The function prints all
 #' differences per variable and stops at the end, like the other test functions.
@@ -95,8 +103,8 @@ pv_value_labels <- function(pv) {
 #'   only prints the results and returns the result table.
 #'
 #' @return Invisibly a data frame with one row per variable and code and the columns `var`, `pv_var`, `code`,
-#'   `data_label`, `pv_label`, `status` ("ok", "format", "fill_in", "list", "mismatch", "missing_in_data", "not_in_pv") and
-#'   `item`.
+#'   `data_label`, `pv_label`, `status` ("ok", "format", "fill_in", "list", "season", "mismatch", "missing_in_data",
+#'   "not_in_pv") and `item`.
 #'   If differences are found and `stop_on_fail = TRUE`, the function stops with an error after printing them.
 #'
 #' @examples
@@ -124,6 +132,7 @@ value_label_test <- function(data, pv, ignore = c("duration$", "_e$"), show_form
   expected <- if (is.data.frame(pv) && all(c("var", "code", "label") %in% names(pv))) pv else pv_value_labels(pv)
   if (!"item" %in% names(expected)) expected$item <- NA_character_
   if (!"list" %in% names(expected)) expected$list <- NA_character_
+  if (!"date" %in% names(expected)) expected$date <- FALSE
 
   data_vars <- names(data)
   if (length(ignore) > 0) {
@@ -140,7 +149,10 @@ value_label_test <- function(data, pv, ignore = c("duration$", "_e$"), show_form
     v <- data_vars[i]
     exp_v <- expected[expected$var == pv_var[i] & !is.na(expected$code), , drop = FALSE]
     list_name <- expected$list[expected$var == pv_var[i]][1]
-    compare_value_labels(v, pv_var[i], attr(data[[v]], "labels", exact = TRUE), exp_v, list_name)
+    var_label <- attr(data[[v]], "label", exact = TRUE)
+    is_date <- isTRUE(any(expected$date[expected$var == pv_var[i]])) ||
+      (!is.null(var_label) && is_date_vb(as.character(var_label)[1]))
+    compare_value_labels(v, pv_var[i], attr(data[[v]], "labels", exact = TRUE), exp_v, list_name, is_date)
   })
   result <- do.call(rbind, c(list(empty_value_result()), rows))
   rownames(result) <- NULL
@@ -165,6 +177,12 @@ value_label_test <- function(data, pv, ignore = c("duration$", "_e$"), show_form
     for (v in unique(from_list$var)) {
       message("  ", v, ": ", sum(from_list$var == v), " code(s) from ", from_list$pv_label[from_list$var == v][1])
     }
+  }
+
+  seasons <- result[result$status == "season", , drop = FALSE]
+  if (nrow(seasons) > 0) {
+    message("NOTE: ", length(unique(seasons$var)), " date variable(s) have season codes that are not listed in the PV ",
+            "(fine): ", paste(unique(seasons$var), collapse = ", "))
   }
 
   fill <- result[result$status == "fill_in", , drop = FALSE]
@@ -193,7 +211,7 @@ empty_value_result <- function() {
 }
 
 # Compare the value labels of one data variable with the expected codes of its PV variable
-compare_value_labels <- function(var, pv_var, data_labels, expected, list_name = NA_character_) {
+compare_value_labels <- function(var, pv_var, data_labels, expected, list_name = NA_character_, is_date = FALSE) {
   data_codes <- if (is.null(data_labels)) numeric(0) else as.numeric(unname(data_labels))
   data_texts <- if (is.null(data_labels)) character(0) else names(data_labels)
   exp_codes <- unique(expected$code)
@@ -204,7 +222,10 @@ compare_value_labels <- function(var, pv_var, data_labels, expected, list_name =
   rows <- lapply(codes, function(code) {
     pv_texts <- expected$label[expected$code == code]
     data_text <- if (code %in% data_codes) data_texts[match(code, data_codes)] else NA_character_
-    if (length(pv_texts) == 0 && !is.na(list_name)) {
+    if (length(pv_texts) == 0 && is_date && is_season_code(code, data_text)) {
+      status <- "season"
+      pv_text <- NA_character_
+    } else if (length(pv_texts) == 0 && !is.na(list_name)) {
       status <- "list"
       pv_text <- list_name
     } else if (length(pv_texts) == 0) {
@@ -248,12 +269,7 @@ print_value_rows <- function(rows) {
 
 # Expected codes for the variable(s) of one item. Returns a data frame with var, code, label (code NA = no codes).
 expand_item_values <- function(va, vb, we, instr) {
-  va_clean <- clean_va(va)
-  m <- regmatches(va_clean, regexec("^([^ (]+)\\s*\\((.*)\\)$", va_clean))[[1]]
-  vars <- if (length(m) == 0) va_clean else {
-    v <- trimws(strsplit(m[3], "[/,]")[[1]])
-    v[nzchar(v)]
-  }
+  vars <- va_vars(clean_va(va))
   parsed <- parse_we_tag(we, vars)
   make <- function(var, codes) {
     if (nrow(codes) == 0) {
@@ -361,4 +377,16 @@ parse_season_codes <- function(instr) {
   if (length(hits) == 0) return(none)
   data.frame(code = as.numeric(sub("^([0-9]+).*$", "\\1", hits)),
              label = squish(sub("^[0-9]+\\s*=\\s*", "", hits)), stringsAsFactors = FALSE)
+}
+
+# TRUE if a vb-tag or variable label belongs to a date ("Datum", "Monat")
+is_date_vb <- function(text) {
+  !is.na(text) && grepl("datum|monat", text, ignore.case = TRUE)
+}
+
+# TRUE if a code with its label in the data is a season code of a date (21 to 32, e.g. "Jahresanfang/Winter")
+is_season_code <- function(code, label) {
+  code >= 21 && code <= 32 && !is.na(label) &&
+    grepl("winter|fr(\u00fc|ue|u)hling|fr(\u00fc|ue|u)hjahr|ostern|sommer|herbst|jahresanfang|jahresmitte|jahresende",
+          label, ignore.case = TRUE, perl = TRUE)
 }
