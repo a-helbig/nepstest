@@ -9,7 +9,7 @@ items (dates, multiple choice items, lists) are split into one set of codes per 
 
     <a class="navbar-brand me-2" href="../index.html">nepstest</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,8 +60,8 @@ items (dates, multiple choice items, lists) are split into one set of codes per 
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with one row per variable and code and the columns <code>var</code>, <code>code</code>, <code>label</code>, <code>list</code> (name of a
-list like <code>[Gemeindeliste]</code> the codes come from, otherwise NA), <code>item</code>, <code>va</code> and <code>pv</code>. Variables of the PV without
-any code (e.g. open questions without buttons) have one row with <code>code</code> NA.</p>
+list like <code>[Gemeindeliste]</code> the codes come from, otherwise NA), <code>date</code> (TRUE for date items), <code>item</code>, <code>va</code> and
+<code>pv</code>. Variables of the PV without any code (e.g. open questions without buttons) have one row with <code>code</code> NA.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -77,7 +77,8 @@ variable of the item. The lines for the single variables (<code>ts23525 1: Sonde
 <li><p>A list in square brackets (e.g. <code>[Gemeindeliste]</code>) means that the codes come from a list that is not
 in the PV. The name of the list is kept in the column <code>list</code>, the buttons of the item are read as usual.</p></li>
 <li><p>If the same code appears several times with different texts (e.g. under different conditions), every text is accepted.</p></li>
-</ul></div>
+</ul><p>An item counts as a date (column <code>date</code>) if its vb-tag mentions "Datum" or "Monat".</p>
+    </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="value_label_test.html">value_label_test()</a></code>, which uses this function. Call it yourself (<code>nepstest:::pv_value_labels()</code>) to

@@ -24,9 +24,9 @@ pv_value_labels(pv)
 
 A data frame with one row per variable and code and the columns `var`,
 `code`, `label`, `list` (name of a list like `[Gemeindeliste]` the codes
-come from, otherwise NA), `item`, `va` and `pv`. Variables of the PV
-without any code (e.g. open questions without buttons) have one row with
-`code` NA.
+come from, otherwise NA), `date` (TRUE for date items), `item`, `va` and
+`pv`. Variables of the PV without any code (e.g. open questions without
+buttons) have one row with `code` NA.
 
 ## Details
 
@@ -59,6 +59,9 @@ The lines of a we-tag are read as follows:
 
 - If the same code appears several times with different texts (e.g.
   under different conditions), every text is accepted.
+
+An item counts as a date (column `date`) if its vb-tag mentions "Datum"
+or "Monat".
 
 ## See also
 

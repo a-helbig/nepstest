@@ -51,8 +51,8 @@ value_label_test(
 
 Invisibly a data frame with one row per variable and code and the
 columns `var`, `pv_var`, `code`, `data_label`, `pv_label`, `status`
-("ok", "format", "fill_in", "list", "mismatch", "missing_in_data",
-"not_in_pv") and `item`. If differences are found and
+("ok", "format", "fill_in", "list", "season", "mismatch",
+"missing_in_data", "not_in_pv") and `item`. If differences are found and
 `stop_on_fail = TRUE`, the function stops with an error after printing
 them.
 
@@ -88,6 +88,14 @@ For every variable and code the function checks:
   country list): the codes in the data that are not in the PV are not
   checked and counted in a NOTE. The buttons of the item are checked as
   usual.
+
+- date variables: season codes (21 to 32, e.g. "Jahresanfang/Winter",
+  "Jahresmitte/Sommer", "Herbst", "Jahresende") that are in the data but
+  not in the PV are fine, because the PVs often do not list them. They
+  are counted in a NOTE. A variable is a date variable if its vb-tag
+  (see
+  [`pv_value_labels()`](https://a-helbig.github.io/nepstest/reference/pv_value_labels.md))
+  or its variable label in the data mentions "Datum" or "Monat".
 
 Character variables (open answers) cannot carry value labels in Stata
 and are skipped. The function prints all differences per variable and

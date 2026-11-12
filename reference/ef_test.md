@@ -123,3 +123,32 @@ Other test functions:
 [`value_label_test()`](https://a-helbig.github.io/nepstest/reference/value_label_test.md)
 
 ## Examples
+
+``` r
+if (FALSE) { # \dontrun{
+# aliz: --ef: if (h_panel = 1)
+ef_test(T_27AL, "aliz", h_panel %in% 1)
+
+# aliz2: --ef: if (h_panel = 0 & h_dauertan = 2)
+ef_test(T_27AL, "aliz2", h_panel %in% 0 & h_dauertan %in% 2)
+
+# almb: --ef: if (almod1 = 1, 2, 4), within Block 2 with --ef: if (alintrop <> 2)
+ef_test(T_27AL, "almb", !alintrop %in% 2 & almod1 %in% c(1, 2, 4))
+
+# alenddat: two ef lines are alternatives: if (h_panel = 0) / if (aliz = 2)
+ef_test(T_27AL, c("alendm", "alendj"), !alintrop %in% 2 & (h_panel %in% 0 | aliz %in% 2))
+
+# only check for overfiltering
+ef_test(T_27AL, "alge", alme %in% 1, check = "not_asked")
+
+# item that is always asked (--ef: alle)
+ef_test(T_27AL, "alnr", TRUE)
+
+# codes defined in the script can be used in the condition
+panel_modes <- c(2, 3)
+ef_test(T_27AL, "alintro12", almod1 %in% panel_modes)
+
+# strict Test 2 without the duration rule
+ef_test(T_27AL, "algb", almb %in% 1, use_duration = FALSE)
+} # }
+```
