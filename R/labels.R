@@ -17,7 +17,9 @@
 #'   "Zeitarbeit andauernder Erwerbsepisoden h_etzeit1"
 #'
 #' The list in the vb-tag is the first bracket with slashes or commas whose number of parts equals the number of variables
-#' in the va-tag (or, if there is none, the first bracket with slashes or commas). The parts are assigned to the variables
+#' in the va-tag. If there is none, a list after a colon whose parts are separated by slashes with blanks around them is
+#' used, if its number of parts fits (e.g. vb "Mitbewohner: (Ehe-)Partner/in / Kinder (auch Pflegekinder) / ..." gives
+#' "Mitbewohner (Ehe-)Partner/in" for the first variable). Otherwise the first bracket with slashes or commas is used. The parts are assigned to the variables
 #' in order. If the va-tag holds more variables than the list has parts, which is common for multiple choice items whose
 #' last variables stand for refusal and don't know, the label of the remaining variables is taken from their line in
 #' the we-tag (e.g. the line `ts23528: verweigert` gives the text of the vb-tag before the list followed by "verweigert").
@@ -387,21 +389,38 @@ expand_item_labels <- function(va, vb, we) {
 # Returns the text before and after the bracket and the cleaned parts, or NULL.
 find_vb_list <- function(vb, n_vars) {
   pos <- gregexpr("\\(([^()]*)\\)", vb)[[1]]
-  if (pos[1] == -1) return(NULL)
+  if (pos[1] == -1) return(find_vb_colon_list(vb, n_vars))
   starts <- as.integer(pos)
   ends <- starts + attr(pos, "match.length") - 1
   inner <- substring(vb, starts + 1, ends - 1)
   is_list <- grepl("[/,]", inner)
-  if (!any(is_list)) return(NULL)
+  if (!any(is_list)) return(find_vb_colon_list(vb, n_vars))
   parts <- lapply(inner, split_vb_list)
   n_parts <- vapply(parts, length, integer(1))
   candidates <- which(is_list & n_parts == n_vars)
+  if (length(candidates) == 0) {
+    colon <- find_vb_colon_list(vb, n_vars)
+    if (!is.null(colon)) return(colon)
+  }
   k <- if (length(candidates) > 0) candidates[1] else which(is_list)[1]
   list(
     before = trimws(substr(vb, 1, starts[k] - 1)),
     after = trimws(substr(vb, ends[k] + 1, nchar(vb))),
     parts = parts[[k]]
   )
+}
+
+# A list without brackets after a colon, separated by slashes with blanks around them, e.g.
+# "Mitbewohner: (Ehe-)Partner/in / Kinder (auch Pflegekinder, Adoptivkinder) / ... / weiss nicht". Slashes without
+# blanks ("Partner/in") and brackets inside the parts are kept. Only used if the number of parts equals the number of
+# variables. Returns the same list as find_vb_list() or NULL.
+find_vb_colon_list <- function(vb, n_vars) {
+  m <- regmatches(vb, regexec("^([^:]+?)\\s*:\\s*(.+)$", vb))[[1]]
+  if (length(m) == 0 || grepl("\\s/\\s", m[2])) return(NULL)
+  parts <- trimws(strsplit(m[3], "\\s+/\\s+")[[1]])
+  parts <- parts[nzchar(parts)]
+  if (length(parts) < 2 || length(parts) != n_vars) return(NULL)
+  list(before = trimws(m[2]), after = "", parts = parts)
 }
 
 # Split the inside of a bracket at slashes (or commas, if there is no slash) and clean the parts:

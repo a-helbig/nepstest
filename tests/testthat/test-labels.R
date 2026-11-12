@@ -167,3 +167,18 @@ test_that("va_vars: a plain list of variables without a group name is split", {
   expect_equal(lab$var, c("t743021", "t743022"))
   expect_equal(lab$label, c("Aussage Teamarbeit", "Aussage Vorgesetzte"))
 })
+
+test_that("pv_var_labels: a list after a colon without brackets is split at slashes with blanks", {
+  va <- paste0("t7430", 21:33, collapse = " / ")
+  vb <- paste("Mitbewohner: (Ehe-)Partner/in / Kinder (auch Pflegekinder, Adoptivkinder) / Kinder der Partnerin,",
+              "des Partners / Mutter (auch Stiefmutter, Pflegemutter, Adoptivmutter) / Vater (auch Stiefvater,",
+              "Pflegevater, Adoptivvater) / Geschwister / Großeltern(teil) / Enkelkind(er) / Schwiegereltern(teil) /",
+              "andere Verwandte / nicht Verwandte / verweigert / weiß nicht")
+  lab <- expand_item_labels(va, vb, NA_character_)
+  expect_equal(nrow(lab), 13)
+  expect_equal(lab$label[1], "Mitbewohner (Ehe-)Partner/in")
+  expect_equal(lab$label[3], "Mitbewohner Kinder der Partnerin, des Partners")
+  expect_equal(lab$label[13], "Mitbewohner weiß nicht")
+  expect_true(all(is.na(lab$note)))
+  expect_equal(compare_labels("Mitbewohner: Kinder (auch Pflegekinder, Adoptivkinder)", lab$label[2]), "format")
+})
