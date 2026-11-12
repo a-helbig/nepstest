@@ -128,3 +128,17 @@ test_that("value_label_test: season codes of date variables are fine even if the
   d <- make_value_data(list(ettrennm = c("irgendwas" = 22)))
   expect_error(suppressMessages(value_label_test(d, pv_path)), "value_label_test failed")
 })
+
+test_that("parse_we_tag: codes without a colon are read", {
+  we <- paste("1 trifft gar nicht zu", "2 trifft eher nicht zu", "3 teils/teils", "4 trifft eher zu",
+              "5 trifft völlig zu", "BUTTONS: verweigert (-97), weiß nicht (-98)", sep = "\n")
+  p <- parse_we_tag(we, "t275035")
+  expect_equal(p$codes$code, 1:5)
+  expect_equal(p$codes$label[3], "teils/teils")
+  expect_equal(p$codes$label[5], "trifft völlig zu")
+  expect_equal(sort(p$buttons$code), c(-98, -97))
+  # lines with a colon still work, "21=..." or dates are no codes
+  p <- parse_we_tag("1: ja\n2 : nein\n21=Jahresanfang\nMonat ____ Jahr _____", "x")
+  expect_equal(p$codes$code, c(1, 2))
+  expect_equal(p$codes$label, c("ja", "nein"))
+})

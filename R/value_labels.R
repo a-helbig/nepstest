@@ -7,7 +7,8 @@
 #' @details
 #' The lines of a we-tag are read as follows:
 #'
-#' * `1: Arbeiter/in` gives code 1 with the label "Arbeiter/in".
+#' * `1: Arbeiter/in` gives code 1 with the label "Arbeiter/in". The colon may be missing: `1 trifft gar nicht zu`
+#'   gives code 1 with the label "trifft gar nicht zu".
 #' * Conditions in front of a code are removed: `if (h_etauto = 0) 5: Mitarbeiter` gives code 5.
 #' * `BUTTONS: verweigert (-97), ...` gives code -97 with the label "verweigert", and so on. Conditions in the buttons
 #'   (`[if h_panel = 0] bis heute (-5)`) are removed from the label.
@@ -333,8 +334,8 @@ parse_we_tag <- function(we, vars = character(0)) {
       inner <- gsub("^[\\[{]\\s*|\\s*[\\]}]$", "", line, perl = TRUE)
       if (grepl("liste", inner, ignore.case = TRUE) && !grepl(":", inner, fixed = TRUE)) {
         out$list <- paste0("[", inner, "]")
-      } else if (grepl("^-?[0-9]+\\s*:", inner)) {
-        out$mf_codes <- add(out$mf_codes, sub("^(-?[0-9]+)\\s*:.*$", "\\1", inner), sub("^-?[0-9]+\\s*:\\s*", "", inner))
+      } else if (is_code_line(inner)) {
+        out$mf_codes <- add(out$mf_codes, code_of_line(inner), label_of_line(inner))
       }
       next
     }
@@ -344,14 +345,19 @@ parse_we_tag <- function(we, vars = character(0)) {
       out$has_var_lines <- TRUE
       next
     }
-    if (grepl("^-?[0-9]+\\s*:", line)) {
-      label <- sub("^-?[0-9]+\\s*:\\s*", "", line)
-      label <- squish(gsub("<<.*?>>", "", label, perl = TRUE))
-      out$codes <- add(out$codes, sub("^(-?[0-9]+)\\s*:.*$", "\\1", line), label)
+    if (is_code_line(line)) {
+      label <- squish(gsub("<<.*?>>", "", label_of_line(line), perl = TRUE))
+      out$codes <- add(out$codes, code_of_line(line), label)
     }
   }
   out
 }
+
+# A we-line with a code: "1: Arbeiter/in" or, without the colon, "1 trifft gar nicht zu"
+code_line_re <- "^(-?[0-9]+)(\\s*:\\s*|\\s+(?=[^\\s:=0-9]))"
+is_code_line <- function(line) grepl(code_line_re, line, perl = TRUE)
+code_of_line <- function(line) sub(paste0(code_line_re, ".*$"), "\\1", line, perl = TRUE)
+label_of_line <- function(line) sub(code_line_re, "", line, perl = TRUE)
 
 # Remove a leading condition from a we-line: "if (a = 1) 5: x", "if ((a) & b) 5: x", "(if a = 1) x", "if <a> 5: x"
 strip_we_condition <- function(line) {
